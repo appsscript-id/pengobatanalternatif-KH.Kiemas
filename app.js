@@ -275,7 +275,6 @@ async function saveTicketImage() {
 $('saveTicket').onclick = saveTicketImage;
 $('printTicket').onclick = () => window.print();
 $('newTicket').onclick = hideTicket;
-};
 loadSavedTicket();
 
 /* Pasien lupa menyimpan bukti: cari kembali memakai nomor telepon */
