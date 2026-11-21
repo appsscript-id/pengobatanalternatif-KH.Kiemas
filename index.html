@@ -115,6 +115,13 @@
       <form id="queueForm"><input type="hidden" id="editId"><label for="editName">Nama pasien</label><input id="editName" required minlength="2" maxlength="100"><label for="editAge">Umur</label><input id="editAge" type="number" min="0" max="120" required><label for="editAddress">Alamat</label><textarea id="editAddress" rows="2" required maxlength="300"></textarea><label for="editPhone">Nomor telepon atau WhatsApp</label><input id="editPhone" required inputmode="tel" maxlength="20"><label for="editVisitDate">Tanggal kunjungan</label><input id="editVisitDate" type="date" required><label for="editNote">Catatan</label><textarea id="editNote" rows="2" maxlength="500"></textarea><div class="modal-actions"><button type="button" class="btn btn-danger hidden" id="deleteQueue">Hapus antrian</button><button type="button" class="btn btn-outline" id="cancelModal">Batal</button><button class="btn btn-primary" type="submit" id="saveQueue">Simpan Data</button></div></form>
     </div>
   </div>
+  <div class="modal-backdrop hidden" id="viewModal">
+    <div class="modal-card view-card"><div class="modal-head"><div><span class="eyebrow">DATA PASIEN</span><h2>Antrian <span id="viewNumber"></span></h2></div><button class="icon-btn" id="closeView" aria-label="Tutup">×</button></div>
+      <span class="view-status" id="viewStatus"></span>
+      <dl class="view-info" id="viewBody"></dl>
+      <div class="modal-actions"><button type="button" class="btn btn-outline" id="viewClose">Tutup</button><button type="button" class="btn btn-primary" id="viewEdit">Edit Data</button></div>
+    </div>
+  </div>
   <div class="toast" id="toast" role="status"></div>
   <script src="app.js"></script>
 </body>
