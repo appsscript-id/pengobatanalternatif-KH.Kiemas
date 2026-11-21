@@ -85,12 +85,14 @@ function esc(s) {
 }
 
 /* ---------- Navigasi ---------- */
-document.querySelectorAll('[data-view]').forEach(btn => btn.addEventListener('click', () => {
-  document.querySelectorAll('[data-view]').forEach(x => x.classList.toggle('active', x === btn));
-  $('patientView').classList.toggle('hidden', btn.dataset.view !== 'patient');
-  $('adminView').classList.toggle('hidden', btn.dataset.view !== 'admin');
-}));
-
+const PIN_KEY = 'antrianKiemasPin', VIEW_KEY = 'antrianKiemasView';
+function showView(name) {
+  document.querySelectorAll('[data-view]').forEach(x => x.classList.toggle('active', x.dataset.view === name));
+  $('patientView').classList.toggle('hidden', name !== 'patient');
+  $('adminView').classList.toggle('hidden', name !== 'admin');
+  try { sessionStorage.setItem(VIEW_KEY, name); } catch (e) {}
+}
+document.querySelectorAll('[data-view]').forEach(btn => btn.addEventListener('click', () => showView(btn.dataset.view)));
 /* ---------- Pasien ---------- */
 const STORE_KEY = 'antrianKiemasBukti';
 let currentTicket = null;
@@ -319,6 +321,7 @@ $('lookupResult').addEventListener('click', e => {
 /* ---------- Admin: login ---------- */
 function logout() {
   adminPin = '';
+  try { sessionStorage.removeItem(PIN_KEY); } catch (e) {}
   $('adminPin').value = '';
   searchQuery = ''; $('queueSearch').value = '';
   $('adminDashboard').classList.add('hidden');
@@ -337,6 +340,7 @@ $('loginForm').addEventListener('submit', async e => {
   adminPin = $('adminPin').value;
   try {
     await loadQueues();
+    try { sessionStorage.setItem(PIN_KEY, adminPin); } catch (e) {}
     $('holidayFrom').min = today();
     $('adminLogin').classList.add('hidden');
     $('adminDashboard').classList.remove('hidden');
@@ -711,6 +715,24 @@ $('weeklyItems').addEventListener('click', async e => {
   }
 });
 loadHolidays();
+/* Tetap masuk setelah halaman di-refresh */
+(async function restoreAdmin() {
+  let pin = '', view = '';
+  try { pin = sessionStorage.getItem(PIN_KEY) || ''; view = sessionStorage.getItem(VIEW_KEY) || ''; } catch (e) {}
+  if (view === 'admin') showView('admin');
+  if (!pin) return;
+  adminPin = pin;
+  try {
+    await loadQueues();
+    $('holidayFrom').min = today();
+    $('adminLogin').classList.add('hidden');
+    $('adminDashboard').classList.remove('hidden');
+  } catch (err) {
+    adminPin = '';
+    if (err.message === 'PIN admin salah.') { try { sessionStorage.removeItem(PIN_KEY); } catch (e) {} }
+    else notify(err.message);
+  }
+})();
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
