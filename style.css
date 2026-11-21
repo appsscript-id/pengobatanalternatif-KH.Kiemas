@@ -62,81 +62,66 @@ select{border:1px solid #dce5eb;border-radius:9px;padding:13px 14px;color:var(--
 .view-link{display:inline-block;margin-left:6px;padding:3px 10px;border-radius:20px;background:#eaf3f6;color:var(--blue);font-size:12px;font-weight:700;text-decoration:none}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-4px)}}
 .modal-card.shake{animation:shake .3s}
-/* ===== Tampilan pasien di komputer: dua kolom, muat satu layar ===== */
+/* ===== Tampilan pasien di komputer: langkah 01-03 di kolom kiri, muat satu layar ===== */
+.hero-steps{display:none}
+
 @media (min-width:801px){
-  main{padding:28px 24px 26px}
-  #patientView .hero{gap:56px;padding:0 0 22px}
+  body{display:flex;flex-direction:column;min-height:100vh}
+  .topbar{height:66px}
+  main{flex:1;width:100%;display:flex;flex-direction:column;padding:18px 24px 10px}
+  footer{padding-top:14px;padding-bottom:14px}
+  #patientView{flex:1;flex-direction:column}
+  #patientView:not(.hidden){display:flex}
+  #patientView .info-strip{display:none}
+
+  #patientView .hero{flex:1;grid-template-columns:1fr 1fr;gap:64px;align-content:center;padding:0 0 12px}
   #patientView .hero-copy{padding:0}
-  #patientView .hero h1{font-size:clamp(32px,3.6vw,44px);margin:12px 0}
-  #patientView .hero-copy>p{font-size:15px;line-height:1.7}
-  #patientView .hero-meta{margin-top:18px}
-  #patientView .info-strip{padding-top:18px}
+  #patientView .hero h1{font-size:clamp(34px,4.8vh,54px);margin:12px 0}
+  #patientView .hero-copy>p{font-size:clamp(14px,1.8vh,16px);line-height:1.7}
+  #patientView .hero-meta{margin-top:clamp(14px,2.4vh,26px)}
 
-  #patientView .form-card{padding:20px 26px 16px}
-  #patientView .card-heading{margin-bottom:6px}
-  #patientView .card-heading h2{font-size:20px;margin-top:4px}
+  /* tiga langkah di bawah teks sambutan */
+  #patientView .hero-steps{display:grid;gap:clamp(10px,1.8vh,18px);max-width:470px;margin-top:clamp(20px,3.6vh,38px);padding-top:clamp(16px,2.8vh,28px);border-top:1px solid var(--line)}
+  .hero-steps>div{display:flex;align-items:center;gap:14px}
+  .hero-steps p{margin:0}
+  .hero-steps b,.hero-steps small{display:block}
+  .hero-steps b{font-size:13px;color:var(--navy)}
+  .hero-steps small{font-size:12px;color:#8795a0;margin-top:3px}
+  .hero-steps .info-icon{flex:none}
 
-  /* formulir dua kolom */
-  #takeForm{display:grid;grid-template-columns:1.5fr 1fr;column-gap:14px}
-  #takeForm label{margin:9px 0 5px}
-  #takeForm input,#takeForm textarea{padding:9px 12px}
-  #takeForm textarea{height:54px;min-height:0;resize:none}
-
+  /* kartu pendaftaran */
+  #patientView .form-card{padding:clamp(18px,3vh,34px) 30px clamp(14px,2.2vh,24px)}
+  #patientView .card-heading{margin-bottom:clamp(4px,1.1vh,12px)}
+  #patientView .card-heading h2{font-size:clamp(20px,2.6vh,25px)}
+  #takeForm{display:grid;grid-template-columns:1.3fr 1fr;column-gap:14px}
+  #takeForm label{font-size:13px;margin:clamp(8px,1.5vh,18px) 0 clamp(4px,.8vh,8px)}
+  #takeForm input,#takeForm textarea{padding:clamp(9px,1.4vh,15px) 13px}
+  #takeForm textarea{height:clamp(50px,7vh,82px);min-height:0;resize:none}
   #takeForm label[for=patientName]{grid-column:1;grid-row:1}
   #patientName{grid-column:1;grid-row:2}
   #takeForm label[for=patientAge]{grid-column:2;grid-row:1}
   #patientAge{grid-column:2;grid-row:2}
-
   #takeForm label[for=patientAddress]{grid-column:1/-1;grid-row:3}
   #patientAddress{grid-column:1/-1;grid-row:4}
-
   #takeForm label[for=patientPhone]{grid-column:1;grid-row:5}
   #patientPhone{grid-column:1;grid-row:6}
   #takeForm label[for=visitDate]{grid-column:2;grid-row:5}
   #visitDate{grid-column:2;grid-row:6}
-
   #visitDateHint{grid-column:1/-1;grid-row:7}
   #holidayList{grid-column:1/-1;grid-row:8}
-
   #takeForm label[for=patientNote]{grid-column:1/-1;grid-row:9}
   #patientNote{grid-column:1/-1;grid-row:10}
-
-  #takeBtn{grid-column:1/-1;grid-row:11;margin-top:14px;padding:12px}
+  #takeBtn{grid-column:1/-1;grid-row:11;margin-top:clamp(12px,2.2vh,24px);padding:clamp(12px,1.8vh,17px)}
   #takeForm .form-foot{grid-column:1/-1;grid-row:12;margin:8px 0 0}
-
-  #patientView .lookup{margin-top:10px;padding-top:8px}
+  #patientView .lookup{margin-top:clamp(10px,1.8vh,18px);padding-top:clamp(8px,1.4vh,14px)}
 }
 
-/* layar komputer yang pendek (laptop kecil): dipadatkan lagi */
+/* layar komputer pendek (laptop kecil) */
 @media (min-width:801px) and (max-height:760px){
-  main{padding-top:16px}
-  #patientView .hero{padding-bottom:14px}
+  main{padding-top:12px}
   #patientView .hero-meta{display:none}
+  #patientView .hero-steps{margin-top:18px;padding-top:14px;gap:10px}
   #takeForm label{margin:6px 0 4px}
   #takeForm textarea{height:44px}
   #takeBtn{margin-top:10px}
-  #patientView .info-strip{padding-top:12px}
-}
-/* ===== Isi penuh tinggi layar, tanpa scroll (komputer) ===== */
-@media (min-width:801px) and (min-height:801px){
-  body{display:flex;flex-direction:column;min-height:100vh}
-  .topbar{height:66px}
-  main{flex:1;width:100%;display:flex;flex-direction:column;padding:14px 24px 6px}
-  footer{padding-top:14px;padding-bottom:14px}
-  #patientView{flex:1;flex-direction:column}
-  #patientView:not(.hidden){display:flex}
-  #patientView .hero{flex:1;align-content:center;padding-bottom:clamp(10px,2vh,22px)}
-  #patientView .hero h1{font-size:clamp(32px,4.4vh,50px)}
-  #patientView .hero-copy>p{font-size:clamp(14px,1.8vh,16px)}
-  #patientView .hero-meta{display:flex;margin-top:clamp(14px,2.4vh,26px)}
-
-  #patientView .form-card{padding:clamp(16px,2.4vh,28px) 26px clamp(12px,1.8vh,20px)}
-  #patientView .card-heading{margin-bottom:clamp(4px,1vh,10px)}
-  #patientView .card-heading h2{font-size:clamp(19px,2.4vh,23px)}
-  #takeForm label{margin:clamp(7px,1.2vh,15px) 0 clamp(4px,.7vh,7px)}
-  #takeForm input,#takeForm textarea{padding:clamp(8px,1.2vh,13px) 13px}
-  #takeForm textarea{height:clamp(46px,6.2vh,74px)}
-  #takeBtn{margin-top:clamp(10px,1.8vh,20px);padding:clamp(11px,1.5vh,15px)}
-  #patientView .lookup{margin-top:clamp(8px,1.4vh,14px);padding-top:clamp(6px,1vh,12px)}
-  #patientView .info-strip{padding-top:clamp(12px,2vh,24px);margin-bottom:clamp(4px,1vh,12px)}
 }
