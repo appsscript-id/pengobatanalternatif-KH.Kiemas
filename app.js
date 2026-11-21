@@ -274,8 +274,7 @@ async function saveTicketImage() {
 }
 $('saveTicket').onclick = saveTicketImage;
 $('printTicket').onclick = () => window.print();
-$('newTicket').onclick = () => {
-  if (confirm('Pastikan bukti sudah disimpan. Lanjut mendaftarkan pasien baru?')) hideTicket();
+$('newTicket').onclick = hideTicket;
 };
 loadSavedTicket();
 
