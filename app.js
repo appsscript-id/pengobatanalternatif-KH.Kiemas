@@ -41,7 +41,7 @@ function resetVisitDate() {
   $('visitDate').value = firstOpenDate();
   checkVisitDate();
 }
-const APP_VERSION = '2026.11.21-d';
+const APP_VERSION = '2026.11.21-e';
 $('year').textContent = new Date().getFullYear();
 $('appVer').textContent = 'v' + APP_VERSION;
 $('filterDate').value = today();
