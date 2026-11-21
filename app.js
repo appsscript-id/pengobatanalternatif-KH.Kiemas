@@ -41,7 +41,9 @@ function resetVisitDate() {
   $('visitDate').value = firstOpenDate();
   checkVisitDate();
 }
+const APP_VERSION = '2026.11.21-d';
 $('year').textContent = new Date().getFullYear();
+$('appVer').textContent = 'v' + APP_VERSION;
 $('filterDate').value = today();
 resetVisitDate();
 
@@ -71,7 +73,7 @@ function api(params) {
     };
     script.onerror = () => {
       cleanup();
-      reject(new Error('Tidak dapat terhubung ke server. Periksa URL dan deployment Apps Script.'));
+      reject(new Error('Tidak dapat terhubung ke server. Periksa URL dan deployment Apps Script. [v' + APP_VERSION + ' · …' + API_URL.slice(-12) + ']'));
     };
     timer = setTimeout(() => {
       cleanup();
