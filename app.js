@@ -8,6 +8,8 @@ let toastTimer;
 let busy = false;
 let holidays = []; // [{date, note}] tanggal libur yang akan datang
 let weeklyHolidays = []; // [{day, note}] libur rutin tiap pekan (0=Minggu..6=Sabtu)
+let quota = 0; // kuota pendaftaran online per hari (0 = tanpa batas)
+let counts = {}; // {tanggal: jumlah antrian aktif}
 const DAY_NAMES = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
 const $ = (id) => document.getElementById(id);
@@ -23,17 +25,25 @@ function holidayOf(date) {
   const w = weeklyHolidays.find(x => x.day === weekdayOf(date));
   return w ? { date, note: w.note || ('Libur setiap hari ' + DAY_NAMES[w.day]), weekly: true } : null;
 }
+function isFull(date) {
+  return !!date && quota > 0 && (counts[date] || 0) >= quota;
+}
 function firstOpenDate() {
   for (let i = 0; i <= MAX_DAYS_AHEAD; i++) {
     const d = dateStr(new Date(Date.now() + i * 86400000));
-    if (!holidayOf(d)) return d;
+    if (!holidayOf(d) && !isFull(d)) return d;
   }
   return today();
 }
 function checkVisitDate() {
-  const h = holidayOf($('visitDate').value);
-  $('visitDateHint').textContent = h ? 'Libur' + (h.note ? ' — ' + h.note : '') + '. Silakan pilih tanggal lain.' : '';
-  $('takeBtn').disabled = !!h;
+  const d = $('visitDate').value, h = holidayOf(d), full = isFull(d), hint = $('visitDateHint');
+  let msg = '', ok = false;
+  if (h) msg = 'Libur' + (h.note ? ' — ' + h.note : '') + '. Silakan pilih tanggal lain.';
+  else if (full) msg = 'Kuota tanggal ini sudah penuh. Silakan pilih tanggal lain.';
+  else if (d && quota > 0) { msg = 'Sisa kuota: ' + Math.max(quota - (counts[d] || 0), 0) + ' pasien'; ok = true; }
+  hint.textContent = msg;
+  hint.classList.toggle('ok', ok);
+  $('takeBtn').disabled = !!h || full;
 }
 function resetVisitDate() {
   $('visitDate').min = today();
@@ -93,6 +103,7 @@ function showView(name) {
   try { sessionStorage.setItem(VIEW_KEY, name); } catch (e) {}
 }
 document.querySelectorAll('[data-view]').forEach(btn => btn.addEventListener('click', () => showView(btn.dataset.view)));
+
 /* ---------- Pasien ---------- */
 const STORE_KEY = 'antrianKiemasBukti';
 let currentTicket = null;
@@ -115,6 +126,9 @@ function showTicket(t) {
   $('ticketAge').textContent = t.age + ' tahun';
   $('ticketDate').textContent = fmtDate(t.date);
   $('ticketIssued').textContent = t.issued;
+  // Tombol ubah/batal hanya muncul bila nomor telepon pendaftar diketahui
+  $('proofManage').classList.toggle('hidden', !t.phone);
+  $('movePanel').classList.add('hidden');
   $('patientHero').classList.add('hidden');
   $('ticketResult').classList.remove('hidden');
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -123,19 +137,24 @@ function hideTicket() {
   currentTicket = null;
   try { localStorage.removeItem(STORE_KEY); } catch (e) {}
   $('ticketResult').classList.add('hidden');
+  $('movePanel').classList.add('hidden');
   $('patientHero').classList.remove('hidden');
   // Kembalikan bagian "cari bukti" ke keadaan awal
   $('lookupForm').reset();
   $('lookupForm').classList.add('hidden');
   $('lookupResult').innerHTML = '';
   lookupItems = [];
-}// Bukti terakhir tetap tampil bila halaman dibuka ulang, sampai tanggal kunjungan lewat.
+}
+// Bukti terakhir tetap tampil bila halaman dibuka ulang, sampai tanggal kunjungan lewat.
 function loadSavedTicket() {
   try {
     const t = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
     if (t && t.number && t.date >= today()) showTicket(t);
     else if (t) localStorage.removeItem(STORE_KEY);
   } catch (e) {}
+}
+function storeTicket(t) {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(t)); } catch (err) {}
 }
 
 $('visitDate').addEventListener('change', checkVisitDate);
@@ -145,27 +164,30 @@ $('takeForm').addEventListener('submit', async e => {
   const btn = $('takeBtn');
   btn.disabled = true;
   btn.textContent = 'Memproses...';
+  const phone = $('patientPhone').value.trim();
   try {
     const data = await api({
       action: 'take',
       name: $('patientName').value.trim(),
       age: $('patientAge').value.trim(),
       address: $('patientAddress').value.trim(),
-      phone: $('patientPhone').value.trim(),
+      phone,
       visitDate: $('visitDate').value,
       note: $('patientNote').value.trim()
     });
     const t = {
-      number: data.item.number, name: data.item.name, age: data.item.age, date: data.item.date,
+      number: data.item.number, name: data.item.name, age: data.item.age, date: data.item.date, phone: data.item.phone || phone,
       issued: data.duplicate && data.item.created ? fmtIssued(data.item.created) : new Date().toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     };
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(t)); } catch (err) {}
+    storeTicket(t);
     $('takeForm').reset();
     resetVisitDate();
     showTicket(t);
     notify(data.duplicate ? 'Anda sudah terdaftar pada tanggal ini. Berikut nomor Anda.' : 'Pendaftaran berhasil. Simpan bukti Anda.');
+    loadHolidays(); // perbarui sisa kuota
   } catch (err) {
     notify(err.message);
+    loadHolidays(); // kuota mungkin baru saja penuh
   } finally {
     btn.innerHTML = 'Ambil Nomor Antrian <span>→</span>';
     btn.disabled = false;
@@ -279,9 +301,69 @@ async function saveTicketImage() {
   }
 }
 $('saveTicket').onclick = saveTicketImage;
-$('printTicket').onclick = () => window.print();
+$('printTicket').onclick = () => { clearPrint(); window.print(); };
 $('newTicket').onclick = hideTicket;
 loadSavedTicket();
+
+/* Pasien mengubah tanggal / membatalkan antriannya sendiri */
+function checkMoveDate() {
+  const d = $('moveDate').value, h = holidayOf(d);
+  let msg = '';
+  if (d && currentTicket && d === currentTicket.date) msg = 'Itu tanggal kunjungan Anda saat ini. Pilih tanggal lain.';
+  else if (h) msg = 'Libur' + (h.note ? ' — ' + h.note : '') + '. Silakan pilih tanggal lain.';
+  else if (isFull(d)) msg = 'Kuota tanggal ini sudah penuh. Silakan pilih tanggal lain.';
+  $('moveHint').textContent = msg;
+  $('moveSave').disabled = !d || !!msg;
+}
+$('moveTicketBtn').onclick = async () => {
+  if (!currentTicket) return;
+  const panel = $('movePanel');
+  panel.classList.toggle('hidden');
+  if (panel.classList.contains('hidden')) return;
+  await loadHolidays(); // ambil data libur & kuota terbaru
+  $('moveDate').min = today();
+  $('moveDate').max = maxDate();
+  $('moveDate').value = '';
+  checkMoveDate();
+  panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+$('moveCancel').onclick = () => $('movePanel').classList.add('hidden');
+$('moveDate').addEventListener('change', checkMoveDate);
+$('movePanel').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!currentTicket || !currentTicket.phone) return;
+  const btn = $('moveSave');
+  btn.disabled = true;
+  try {
+    const r = await api({ action: 'moveMine', phone: currentTicket.phone, date: currentTicket.date, number: currentTicket.number, newDate: $('moveDate').value });
+    const t = { number: r.item.number, name: r.item.name, age: r.item.age, date: r.item.date, phone: currentTicket.phone, issued: fmtIssued(r.item.created) };
+    storeTicket(t);
+    showTicket(t);
+    notify(r.message);
+    loadHolidays();
+  } catch (err) {
+    notify(err.message);
+    loadHolidays();
+  } finally {
+    btn.disabled = false;
+    checkMoveDate();
+  }
+});
+$('cancelTicketBtn').onclick = async () => {
+  if (!currentTicket || !currentTicket.phone || busy) return;
+  if (!confirm('Batalkan antrian nomor ' + currentTicket.number + ' tanggal ' + fmtDate(currentTicket.date) + '?')) return;
+  busy = true;
+  try {
+    const r = await api({ action: 'cancelMine', phone: currentTicket.phone, date: currentTicket.date, number: currentTicket.number });
+    hideTicket();
+    notify(r.message);
+    loadHolidays();
+  } catch (err) {
+    notify(err.message);
+  } finally {
+    busy = false;
+  }
+};
 
 /* Pasien lupa menyimpan bukti: cari kembali memakai nomor telepon */
 let lookupItems = [];
@@ -295,11 +377,12 @@ $('lookupForm').addEventListener('submit', async e => {
   btn.disabled = true;
   box.innerHTML = '';
   try {
-    const data = await api({ action: 'find', phone: $('lookupPhone').value.trim() });
+    const phone = $('lookupPhone').value.trim();
+    const data = await api({ action: 'find', phone });
     lookupItems = (data.items || [])
-  .map(i => ({ ...i, number: noOf(i.number) }))
-  .filter(i => i.date >= today() && i.status !== 'Batal')                 // tanggal lewat tidak ditampilkan
-  .sort((a, b) => a.date.localeCompare(b.date));  // urut dari tanggal terdekat
+      .map(i => ({ ...i, number: noOf(i.number), phone }))
+      .filter(i => i.date >= today())                   // tanggal lewat tidak ditampilkan
+      .sort((a, b) => a.date.localeCompare(b.date));    // urut dari tanggal terdekat
     box.innerHTML = lookupItems.length
       ? lookupItems.map((it, i) => `<button type="button" class="lookup-item" data-i="${i}"><b>${esc(it.number)}</b><span>${esc(it.name)}<small>${esc(fmtDate(it.date))}</small></span><em>Lihat bukti</em></button>`).join('')
       : '<p class="lookup-empty">Tidak ada pendaftaran aktif dengan nomor tersebut. Pastikan nomornya sama dengan saat mendaftar.</p>';
@@ -313,8 +396,8 @@ $('lookupResult').addEventListener('click', e => {
   const b = e.target.closest('[data-i]');
   const it = b && lookupItems[b.dataset.i];
   if (!it) return;
-  const t = { number: it.number, name: it.name, age: it.age, date: it.date, issued: fmtIssued(it.created) };
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(t)); } catch (err) {}
+  const t = { number: it.number, name: it.name, age: it.age, date: it.date, phone: it.phone, issued: fmtIssued(it.created) };
+  storeTicket(t);
   showTicket(t);
 });
 
@@ -340,7 +423,7 @@ $('loginForm').addEventListener('submit', async e => {
   adminPin = $('adminPin').value;
   try {
     await loadQueues();
-    try { sessionStorage.setItem(PIN_KEY, adminPin); } catch (e) {}
+    try { sessionStorage.setItem(PIN_KEY, adminPin); } catch (err) {}
     $('holidayFrom').min = today();
     $('adminLogin').classList.add('hidden');
     $('adminDashboard').classList.remove('hidden');
@@ -365,7 +448,9 @@ async function loadQueues() {
   $('statPending').textContent = active.filter(i => !i.cardTaken).length;
   $('statTaken').textContent = active.filter(i => i.cardTaken).length;
   $('statCancelled').textContent = queueItems.length - active.length;
-  $('queueCount').textContent = queueItems.length + ' pasien terdaftar · ' + (data.summary.cardTaken || 0) + ' kartu sudah diambil';
+  const q = data.quota || 0;
+  $('queueCount').textContent = queueItems.length + ' pasien terdaftar · ' + (data.summary.cardTaken || 0) + ' kartu sudah diambil' + (q ? ' · kuota ' + active.length + '/' + q : '');
+  if (document.activeElement !== $('quotaInput')) $('quotaInput').value = q;
   renderGrid();
   renderHolidayUI();
 }
@@ -490,6 +575,41 @@ $('queueSearch').addEventListener('keydown', async e => {
     busy = false;
   }
 });
+
+/* ---------- Admin: cetak daftar harian & kartu antrian ---------- */
+function clearPrint() {
+  document.body.classList.remove('print-list', 'print-cards');
+  $('printArea').innerHTML = '';
+}
+function startPrint(html, mode) {
+  clearPrint();
+  $('printArea').innerHTML = html;
+  document.body.classList.add(mode);
+  setTimeout(() => window.print(), 80);
+}
+window.addEventListener('afterprint', clearPrint);
+
+$('printListBtn').onclick = () => {
+  if (!queueItems.length) { notify('Belum ada antrian pada tanggal ini.'); return; }
+  const date = $('filterDate').value;
+  const active = queueItems.filter(i => i.status !== 'Batal');
+  const rows = queueItems.map(i => {
+    const cancelled = i.status === 'Batal';
+    return `<tr class="${cancelled ? 'cx' : ''}"><td class="c">${esc(i.number)}</td><td>${esc(i.name)}${cancelled ? ' <em>(Batal)</em>' : ''}</td><td class="c">${esc(i.age)}</td><td>${esc(i.address)}</td><td>${esc(i.phone)}</td><td class="c">${i.cardTaken ? '&#10003;' : '&#9744;'}</td><td>${esc(i.note)}</td></tr>`;
+  }).join('');
+  const html = `<div class="pl-head"><h1>Daftar Antrian Pasien</h1><p>Pengobatan Alternatif KH. Kiemas &middot; ${esc(fmtDate(date))}</p></div>
+    <table class="pl-table"><thead><tr><th>No</th><th>Nama</th><th>Umur</th><th>Alamat</th><th>Telepon</th><th>Kartu</th><th>Catatan</th></tr></thead><tbody>${rows}</tbody></table>
+    <p class="pl-foot">Total ${active.length} pasien aktif (${queueItems.length - active.length} batal) &middot; Dicetak ${esc(fmtIssued(new Date()))}</p>`;
+  startPrint(html, 'print-list');
+};
+
+$('printCardsBtn').onclick = () => {
+  const date = $('filterDate').value;
+  const list = queueItems.filter(i => i.status !== 'Batal');
+  if (!list.length) { notify('Belum ada antrian aktif untuk dicetak.'); return; }
+  const cards = list.map(i => `<div class="pcard"><div class="pc-head"><b>KH. KIEMAS</b><small>PENGOBATAN ALTERNATIF</small></div><div class="pc-label">NOMOR ANTRIAN</div><div class="pc-num">${esc(i.number)}</div><div class="pc-name">${esc(i.name)}</div><div class="pc-date">${esc(fmtDate(date))}</div></div>`).join('');
+  startPrint(`<div class="pcards">${cards}</div>`, 'print-cards');
+};
 
 /* ---------- Admin: modal tambah/edit ---------- */
 function setPageLock(on) {
@@ -618,6 +738,23 @@ $('resetDayBtn').onclick = async () => {
   }
 };
 
+/* ---------- Admin: kuota harian ---------- */
+$('quotaForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = $('quotaBtn');
+  btn.disabled = true;
+  try {
+    const r = await api({ action: 'setQuota', pin: adminPin, value: $('quotaInput').value.trim() });
+    await loadQueues();
+    await loadHolidays();
+    notify(r.message);
+  } catch (err) {
+    handleError(err);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
 /* ---------- Hari libur ---------- */
 const shortDate = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }); };
 
@@ -631,8 +768,9 @@ function renderHolidayUI() {
     list.textContent = parts.join(' | ');
     list.classList.remove('hidden');
   } else list.classList.add('hidden');
-  if (holidayOf($('visitDate').value)) $('visitDate').value = firstOpenDate();
+  if (holidayOf($('visitDate').value) || isFull($('visitDate').value)) $('visitDate').value = firstOpenDate();
   checkVisitDate();
+  if (!$('movePanel').classList.contains('hidden')) checkMoveDate();
   // Dashboard admin
   $('holidayItems').innerHTML = holidays.length
     ? holidays.map(h => `<div class="holiday-item"><div><b>${esc(fmtDate(h.date))}</b><small>${esc(h.note || 'Libur')}</small></div><button class="mini-btn danger" data-date="${esc(h.date)}">Hapus</button></div>`).join('')
@@ -650,7 +788,9 @@ async function loadHolidays() {
     const r = await api({ action: 'holidays' });
     holidays = r.items || [];
     weeklyHolidays = r.weekly || [];
-  } catch (e) { holidays = []; weeklyHolidays = []; }
+    quota = r.quota || 0;
+    counts = r.counts || {};
+  } catch (e) { holidays = []; weeklyHolidays = []; quota = 0; counts = {}; }
   renderHolidayUI();
 }
 
@@ -715,6 +855,7 @@ $('weeklyItems').addEventListener('click', async e => {
   }
 });
 loadHolidays();
+
 /* Tetap masuk setelah halaman di-refresh */
 (async function restoreAdmin() {
   let pin = '', view = '';
@@ -739,6 +880,7 @@ loadHolidays();
     else notify(err.message);
   }
 })();
+
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
 }
