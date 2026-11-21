@@ -40,6 +40,14 @@
             <button class="btn btn-primary btn-wide" type="submit" id="takeBtn">Ambil Nomor Antrian <span>→</span></button>
             <p class="form-foot">Pastikan data yang dimasukkan sudah benar.</p>
           </form>
+          <div class="lookup">
+            <button type="button" class="link-btn" id="lookupToggle">Sudah daftar tapi lupa menyimpan bukti? Cari di sini</button>
+            <form id="lookupForm" class="hidden">
+              <label for="lookupPhone">Nomor telepon yang Anda daftarkan</label>
+              <div class="lookup-row"><input id="lookupPhone" inputmode="tel" maxlength="20" placeholder="Contoh: 081234567890" required><button class="btn btn-dark" id="lookupBtn">Cari</button></div>
+              <div id="lookupResult"></div>
+            </form>
+          </div>
         </div>
       </div>
       <section class="proof hidden" id="ticketResult" aria-live="polite">
@@ -69,13 +77,13 @@
         <div class="dashboard-head"><div><span class="eyebrow">PANEL PENGELOLAAN</span><h1>Dashboard Antrian</h1><p>Kelola dan pantau antrian pasien per tanggal.</p></div><div class="head-actions"><input type="date" id="filterDate"><button class="btn btn-outline" id="refreshBtn">↻ Perbarui</button><button class="btn btn-dark" id="logoutBtn">Keluar</button></div></div>
         <div class="stats-grid">
           <div class="stat-card"><span>Total Antrian</span><b id="statTotal">0</b><small>Pada tanggal terpilih</small></div>
-          <div class="stat-card"><span>Menunggu</span><b id="statWaiting">0</b><small>Belum dipanggil</small></div>
-          <div class="stat-card"><span>Dipanggil</span><b id="statCalled">0</b><small>Sedang dilayani</small></div>
-          <div class="stat-card"><span>Selesai</span><b id="statDone">0</b><small>Sudah dilayani</small></div>
+          <div class="stat-card"><span>Kartu Belum Diambil</span><b id="statPending">0</b><small>Menunggu pasien datang</small></div>
+          <div class="stat-card"><span>Kartu Sudah Diambil</span><b id="statTaken">0</b><small>Sudah diberi kartu fisik</small></div>
+          <div class="stat-card"><span>Dibatalkan</span><b id="statCancelled">0</b><small>Antrian batal</small></div>
         </div>
         <div class="queue-toolbar"><div><h2>Denah Antrian</h2><p>Pilih kartu pasien untuk mengelola status antrian.</p></div><button class="btn btn-primary" id="addQueueBtn">＋ Tambah Antrian</button></div>
-        <div class="legend"><span><i class="dot dot-wait"></i> Menunggu</span><span><i class="dot dot-call"></i> Dipanggil</span><span><i class="dot dot-done"></i> Selesai</span><span><i class="dot dot-cancel"></i> Batal</span><span><i class="dot dot-card"></i> Kartu fisik sudah diambil</span></div>
-        <div class="queue-search"><input id="queueSearch" type="search" placeholder="Cari nomor atau nama · Enter = kartu diambil" autocomplete="off"></div>
+        <div class="legend"><span><i class="dot dot-none"></i> Kartu belum diambil</span><span><i class="dot dot-card"></i> Kartu sudah diambil</span><span><i class="dot dot-cancel"></i> Batal</span></div>
+        <div class="queue-search"><input id="queueSearch" type="search" placeholder="Cari nomor, nama, atau telepon · Enter = kartu diambil" autocomplete="off"></div>
         <div class="screen-label"><span></span><b>DAFTAR ANTRIAN PASIEN</b><span></span></div>
         <div class="seat-grid" id="queueGrid"><div class="empty-state">Belum ada data antrian.</div></div>
         <div class="admin-bottom"><span id="queueCount">0 pasien terdaftar</span><button class="text-danger" id="resetDayBtn">Kosongkan antrian tanggal ini</button></div>
