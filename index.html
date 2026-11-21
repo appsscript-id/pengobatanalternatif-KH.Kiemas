@@ -149,6 +149,13 @@
       <div class="modal-actions"><button type="button" class="btn btn-outline" id="viewClose">Tutup</button><button type="button" class="btn btn-primary" id="viewEdit">Edit Data</button></div>
     </div>
   </div>
+  <div class="modal-backdrop hidden" id="confirmModal">
+    <div class="modal-card confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmText">
+      <h2 id="confirmTitle">Konfirmasi</h2>
+      <p id="confirmText"></p>
+      <div class="modal-actions"><button type="button" class="btn btn-outline" id="confirmNo">Batal</button><button type="button" class="btn btn-danger" id="confirmYes">Ya</button></div>
+    </div>
+  </div>
   <div id="printArea" aria-hidden="true"></div>
   <div class="toast" id="toast" role="status"></div>
   <script src="app.js"></script>
