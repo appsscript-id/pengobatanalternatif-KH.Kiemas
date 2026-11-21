@@ -294,7 +294,10 @@ $('lookupForm').addEventListener('submit', async e => {
   box.innerHTML = '';
   try {
     const data = await api({ action: 'find', phone: $('lookupPhone').value.trim() });
-    lookupItems = (data.items || []).map(i => ({ ...i, number: noOf(i.number) }));
+    lookupItems = (data.items || [])
+  .map(i => ({ ...i, number: noOf(i.number) }))
+  .filter(i => i.date >= today() && i.status !== 'Batal')                 // tanggal lewat tidak ditampilkan
+  .sort((a, b) => a.date.localeCompare(b.date));  // urut dari tanggal terdekat
     box.innerHTML = lookupItems.length
       ? lookupItems.map((it, i) => `<button type="button" class="lookup-item" data-i="${i}"><b>${esc(it.number)}</b><span>${esc(it.name)}<small>${esc(fmtDate(it.date))}</small></span><em>Lihat bukti</em></button>`).join('')
       : '<p class="lookup-empty">Tidak ada pendaftaran aktif dengan nomor tersebut. Pastikan nomornya sama dengan saat mendaftar.</p>';
