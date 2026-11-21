@@ -106,7 +106,9 @@ function fmtDate(s) {
   const [y, m, d] = s.split('-').map(Number);
   return new Date(y, m - 1, d).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
+const noOf = (n) => String(n ?? '').replace(/^\D+/, '');
 function showTicket(t) {
+  t = { ...t, number: noOf(t.number) };
   currentTicket = t;
   $('ticketNumber').textContent = t.number;
   $('ticketName').textContent = t.name;
@@ -292,7 +294,7 @@ $('lookupForm').addEventListener('submit', async e => {
   box.innerHTML = '';
   try {
     const data = await api({ action: 'find', phone: $('lookupPhone').value.trim() });
-    lookupItems = data.items || [];
+    lookupItems = (data.items || []).map(i => ({ ...i, number: noOf(i.number) }));
     box.innerHTML = lookupItems.length
       ? lookupItems.map((it, i) => `<button type="button" class="lookup-item" data-i="${i}"><b>${esc(it.number)}</b><span>${esc(it.name)}<small>${esc(fmtDate(it.date))}</small></span><em>Lihat bukti</em></button>`).join('')
       : '<p class="lookup-empty">Tidak ada pendaftaran aktif dengan nomor tersebut. Pastikan nomornya sama dengan saat mendaftar.</p>';
@@ -350,7 +352,7 @@ $('filterDate').onchange = () => { searchQuery = ''; $('queueSearch').value = ''
 /* ---------- Admin: daftar antrian ---------- */
 async function loadQueues() {
   const data = await api({ action: 'list', pin: adminPin, date: $('filterDate').value });
-  queueItems = data.items || [];
+  queueItems = (data.items || []).map(i => ({ ...i, number: noOf(i.number) }));
   const active = queueItems.filter(i => i.status !== 'Batal');
   $('statTotal').textContent = queueItems.length;
   $('statPending').textContent = active.filter(i => !i.cardTaken).length;
