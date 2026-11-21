@@ -70,6 +70,39 @@ document.querySelectorAll('[data-view]').forEach(btn => btn.addEventListener('cl
 }));
 
 /* ---------- Pasien ---------- */
+const STORE_KEY = 'antrianKiemasBukti';
+let currentTicket = null;
+
+function fmtDate(s) {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+function showTicket(t) {
+  currentTicket = t;
+  $('ticketNumber').textContent = t.number;
+  $('ticketName').textContent = t.name;
+  $('ticketAge').textContent = t.age + ' tahun';
+  $('ticketDate').textContent = fmtDate(t.date);
+  $('ticketIssued').textContent = t.issued;
+  $('patientHero').classList.add('hidden');
+  $('ticketResult').classList.remove('hidden');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function hideTicket() {
+  currentTicket = null;
+  try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+  $('ticketResult').classList.add('hidden');
+  $('patientHero').classList.remove('hidden');
+}
+// Bukti terakhir tetap tampil bila halaman dibuka ulang, sampai tanggal kunjungan lewat.
+function loadSavedTicket() {
+  try {
+    const t = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+    if (t && t.number && t.date >= today()) showTicket(t);
+    else if (t) localStorage.removeItem(STORE_KEY);
+  } catch (e) {}
+}
+
 $('takeForm').addEventListener('submit', async e => {
   e.preventDefault();
   const btn = $('takeBtn');
@@ -85,13 +118,15 @@ $('takeForm').addEventListener('submit', async e => {
       visitDate: $('visitDate').value,
       note: $('patientNote').value.trim()
     });
-    $('ticketNumber').textContent = data.item.number;
-    $('ticketName').textContent = data.item.name + ' · ' + data.item.age + ' tahun · ' + data.item.phone + ' · Kunjungan ' + data.item.date;
-    $('ticketResult').classList.remove('hidden');
-    $('ticketResult').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const t = {
+      number: data.item.number, name: data.item.name, age: data.item.age, date: data.item.date,
+      issued: new Date().toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    };
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(t)); } catch (err) {}
     $('takeForm').reset();
     resetVisitDate();
-    notify('Nomor antrian berhasil dibuat.');
+    showTicket(t);
+    notify('Pendaftaran berhasil. Simpan bukti Anda.');
   } catch (err) {
     notify(err.message);
   } finally {
@@ -99,13 +134,124 @@ $('takeForm').addEventListener('submit', async e => {
     btn.innerHTML = 'Ambil Nomor Antrian <span>→</span>';
   }
 });
+
+/* Gambar bukti (PNG) untuk disimpan di galeri / dibagikan */
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function wrapLines(ctx, text, maxW) {
+  const lines = [];
+  let line = '';
+  for (const word of String(text).split(/\s+/)) {
+    const test = line ? line + ' ' + word : word;
+    if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = word; } else line = test;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+async function drawTicketImage(t) {
+  const H1 = "Manrope, 'DM Sans', Arial, sans-serif", H2 = "'DM Sans', Arial, sans-serif";
+  try { await Promise.all([document.fonts.load('800 64px Manrope'), document.fonts.load("700 14px 'DM Sans'")]); } catch (e) {}
+  const W = 360, H = 520, S = 2;
+  const canvas = document.createElement('canvas');
+  canvas.width = W * S; canvas.height = H * S;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(S, S);
+  ctx.fillStyle = '#f5f8fa'; ctx.fillRect(0, 0, W, H);
+  const x = 20, y = 20, w = W - 40, h = H - 40, cx = x + w / 2;
+
+  ctx.save();
+  roundRect(ctx, x, y, w, h, 18); ctx.fillStyle = '#fff'; ctx.fill(); ctx.clip();
+  ctx.fillStyle = '#102a43'; ctx.fillRect(x, y, w, 64);
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
+  ctx.font = '800 13px ' + H1; ctx.fillText('KH. KIEMAS', x + 20, y + 30);
+  ctx.globalAlpha = .65; ctx.font = '700 8px ' + H2; ctx.fillText('PENGOBATAN ALTERNATIF', x + 20, y + 44); ctx.globalAlpha = 1;
+  ctx.textAlign = 'right'; ctx.font = '700 10px ' + H2; ctx.fillText('BUKTI PENDAFTARAN', x + w - 20, y + 37);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#2b9a91'; ctx.font = '800 10px ' + H1; ctx.fillText('NOMOR ANTRIAN', cx, y + 102);
+  ctx.fillStyle = '#102a43'; ctx.font = '800 66px ' + H1; ctx.fillText(t.number, cx, y + 172);
+
+  const cy = y + 204;
+  ctx.setLineDash([5, 4]); ctx.strokeStyle = '#dbe3e9'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(x + 18, cy); ctx.lineTo(x + w - 18, cy); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = '#f5f8fa';
+  ctx.beginPath(); ctx.arc(x, cy, 11, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x + w, cy, 11, 0, Math.PI * 2); ctx.fill();
+
+  ctx.textAlign = 'left';
+  const colW = (w - 48) / 2;
+  const field = (label, value, fx, fy, maxW) => {
+    ctx.fillStyle = '#91a0ab'; ctx.font = '700 9px ' + H2; ctx.fillText(label.toUpperCase(), fx, fy);
+    ctx.fillStyle = '#102a43'; ctx.font = '700 14px ' + H2;
+    const lines = wrapLines(ctx, value, maxW).slice(0, 2);
+    lines.forEach((ln, i) => ctx.fillText(ln, fx, fy + 20 + i * 18));
+    return fy + 20 + lines.length * 18;
+  };
+  let yy = cy + 38;
+  yy = field('Nama pasien', t.name, x + 24, yy, w - 48) + 18;
+  yy = field('Tanggal kunjungan', fmtDate(t.date), x + 24, yy, w - 48) + 18;
+  field('Umur', t.age + ' tahun', x + 24, yy, colW);
+  field('Didaftarkan', t.issued, x + 24 + colW + 8, yy, colW);
+
+  const bh = 58, by = y + h - bh - 20;
+  roundRect(ctx, x + 24, by, w - 48, bh, 10); ctx.fillStyle = '#f1f8f7'; ctx.fill();
+  ctx.fillStyle = '#2b6f69'; ctx.font = '500 10.5px ' + H2; ctx.textAlign = 'center';
+  const noteLines = wrapLines(ctx, 'Tunjukkan bukti ini kepada petugas untuk menerima kartu antrian fisik dengan nomor yang sama.', w - 76);
+  noteLines.forEach((ln, i) => ctx.fillText(ln, cx, by + (bh - noteLines.length * 15) / 2 + 11 + i * 15));
+  ctx.restore();
+
+  roundRect(ctx, x, y, w, h, 18); ctx.strokeStyle = '#e5ebf0'; ctx.lineWidth = 1; ctx.stroke();
+  return canvas;
+}
+async function saveTicketImage() {
+  if (!currentTicket) return;
+  const btn = $('saveTicket');
+  btn.disabled = true;
+  try {
+    const canvas = await drawTicketImage(currentTicket);
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+    if (!blob) throw new Error('Gagal membuat gambar.');
+    const file = new File([blob], 'antrian-' + currentTicket.number + '-' + currentTicket.date + '.png', { type: 'image/png' });
+    // Di HP, lembar bagikan menyediakan pilihan "Simpan gambar"; di komputer langsung diunduh.
+    if (window.matchMedia('(pointer:coarse)').matches && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: 'Bukti pendaftaran antrian ' + currentTicket.number });
+        return;
+      } catch (err) {
+        if (err && err.name === 'AbortError') return;
+      }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = file.name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    notify('Bukti disimpan sebagai gambar.');
+  } catch (err) {
+    notify(err.message || 'Gagal menyimpan gambar.');
+  } finally {
+    btn.disabled = false;
+  }
+}
+$('saveTicket').onclick = saveTicketImage;
 $('printTicket').onclick = () => window.print();
-$('newTicket').onclick = () => $('ticketResult').classList.add('hidden');
+$('newTicket').onclick = () => {
+  if (confirm('Pastikan bukti sudah disimpan. Lanjut mendaftarkan pasien baru?')) hideTicket();
+};
+loadSavedTicket();
 
 /* ---------- Admin: login ---------- */
 function logout() {
   adminPin = '';
   $('adminPin').value = '';
+  searchQuery = ''; $('queueSearch').value = '';
   $('adminDashboard').classList.add('hidden');
   $('adminLogin').classList.remove('hidden');
 }
@@ -134,7 +280,7 @@ $('loginForm').addEventListener('submit', async e => {
 });
 $('logoutBtn').onclick = logout;
 $('refreshBtn').onclick = () => loadQueues().then(() => notify('Data diperbarui.')).catch(handleError);
-$('filterDate').onchange = () => loadQueues().catch(handleError);
+$('filterDate').onchange = () => { searchQuery = ''; $('queueSearch').value = ''; loadQueues().catch(handleError); };
 
 /* ---------- Admin: daftar antrian ---------- */
 async function loadQueues() {
@@ -144,8 +290,18 @@ async function loadQueues() {
   $('statWaiting').textContent = data.summary.waiting;
   $('statCalled').textContent = data.summary.called;
   $('statDone').textContent = data.summary.done;
-  $('queueCount').textContent = queueItems.length + ' pasien terdaftar';
+  $('queueCount').textContent = queueItems.length + ' pasien terdaftar · ' + (data.summary.cardTaken || 0) + ' kartu sudah diambil';
   renderGrid();
+}
+
+let searchQuery = '';
+const numOf = (n) => Number(String(n).replace(/^\D+/, '')) || 0;
+
+function filteredItems() {
+  const q = searchQuery.trim().toLowerCase();
+  if (!q) return queueItems;
+  if (/^\d+$/.test(q)) return queueItems.filter(i => numOf(i.number) === Number(q)); // "10" atau "010" -> A010
+  return queueItems.filter(i => i.number.toLowerCase().includes(q) || i.name.toLowerCase().includes(q));
 }
 
 function renderGrid() {
@@ -154,18 +310,30 @@ function renderGrid() {
     grid.innerHTML = '<div class="empty-state">Belum ada antrian pada tanggal ini.<br>Tekan “Tambah Antrian” untuk memasukkan pasien.</div>';
     return;
   }
+  const items = filteredItems();
+  if (!items.length) {
+    grid.innerHTML = '<div class="empty-state">Tidak ditemukan: “' + esc(searchQuery) + '”.</div>';
+    return;
+  }
   const classes = { Dipanggil: 'called', Selesai: 'done', Batal: 'cancelled' };
-  grid.innerHTML = queueItems.map(item => {
+  grid.innerHTML = items.map(item => {
     const state = classes[item.status] ? item.status : 'Menunggu';
-    const cls = classes[state] || '';
     const open = state === 'Menunggu' || state === 'Dipanggil';
+    const cls = [classes[state] || '', item.cardTaken ? 'has-card' : ''].join(' ').trim();
     const btn = (act, label, extra = '') => `<button class="mini-btn ${extra}" data-action="${act}" data-id="${esc(item.id)}">${label}</button>`;
+    const time = item.cardAt ? new Date(item.cardAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '';
+    const pill = item.cardTaken
+      ? `<span class="card-pill">✓ Kartu diambil${time ? ' · ' + time : ''}</span>`
+      : (state === 'Batal' ? '' : '<span class="card-pill off">Kartu belum diambil</span>');
     return `<article class="queue-seat ${cls}">
       <div class="seat-top"><span class="seat-number">${esc(item.number)}</span><span class="seat-state">${state}</span></div>
       <div class="seat-name" title="${esc(item.name)}">${esc(item.name)}</div>
       <div class="seat-phone">${esc(item.age)} tahun · ${esc(item.phone)}</div>
       <div class="seat-phone seat-addr" title="${esc(item.address)}">${esc(item.address)}</div>
+      ${pill}
       <div class="seat-actions">
+        ${open && !item.cardTaken ? btn('card', 'Kartu diambil', 'card') : ''}
+        ${open && item.cardTaken ? btn('uncard', 'Batalkan kartu') : ''}
         ${state === 'Menunggu' ? btn('call', 'Panggil', 'primary') : ''}
         ${open ? btn('complete', 'Selesai') : ''}
         ${open ? btn('cancel', 'Batal') : btn('reopen', 'Buka lagi')}
@@ -180,7 +348,9 @@ const ACTION_MESSAGES = {
   complete: 'Antrian ditandai selesai.',
   cancel: 'Antrian dibatalkan.',
   reopen: 'Antrian dibuka kembali.',
-  delete: 'Antrian dihapus.'
+  delete: 'Antrian dihapus.',
+  card: 'Kartu ditandai sudah diambil.',
+  uncard: 'Tanda kartu dibatalkan.'
 };
 
 $('queueGrid').addEventListener('click', async e => {
@@ -191,15 +361,41 @@ $('queueGrid').addEventListener('click', async e => {
   const action = b.dataset.action;
   if (action === 'edit') { openModal(item); return; }
   if (action === 'delete' && !confirm('Hapus antrian ' + item.number + ' atas nama ' + item.name + '?')) return;
+  const request = action === 'card' ? { action: 'card', value: '1' }
+    : action === 'uncard' ? { action: 'card', value: '0' }
+    : { action };
   busy = true;
   b.disabled = true;
   try {
-    await api({ action, pin: adminPin, id: item.id });
+    await api({ ...request, pin: adminPin, id: item.id });
     await loadQueues();
     notify(ACTION_MESSAGES[action] || 'Status antrian diperbarui.');
   } catch (err) {
     handleError(err);
     b.disabled = false;
+  } finally {
+    busy = false;
+  }
+});
+
+/* Pencarian cepat: ketik nomor kartu lalu Enter untuk menandai kartu sudah diambil */
+$('queueSearch').addEventListener('input', e => { searchQuery = e.target.value; renderGrid(); });
+$('queueSearch').addEventListener('keydown', async e => {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  const list = filteredItems();
+  if (!searchQuery.trim() || busy) return;
+  if (list.length !== 1) { notify(list.length ? 'Ada lebih dari satu hasil. Ketik nomor lengkap.' : 'Nomor tidak ditemukan.'); return; }
+  const item = list[0];
+  if (item.cardTaken) { notify('Kartu ' + item.number + ' sudah ditandai diambil.'); return; }
+  busy = true;
+  try {
+    await api({ action: 'card', value: '1', pin: adminPin, id: item.id });
+    searchQuery = ''; $('queueSearch').value = '';
+    await loadQueues();
+    notify('Kartu ' + item.number + ' ditandai sudah diambil.');
+  } catch (err) {
+    handleError(err);
   } finally {
     busy = false;
   }
