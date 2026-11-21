@@ -396,21 +396,20 @@ function renderGrid() {
     const cls = [classes[state] || '', item.cardTaken ? 'has-card' : ''].join(' ').trim();
     const btn = (act, label, extra = '') => `<button class="mini-btn ${extra}" data-action="${act}" data-id="${esc(item.id)}">${label}</button>`;
     const time = item.cardAt ? new Date(item.cardAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '';
-    const pill = item.cardTaken
-      ? `<span class="card-pill">✓ Kartu diambil${time ? ' · ' + time : ''}</span>`
-      : (state === 'Batal' ? '' : '<span class="card-pill off">Kartu belum diambil</span>');
+    const badge = state === 'Batal' ? '<span class="seat-state">Batal</span>'
+      : item.cardTaken ? `<span class="seat-state st-taken">✓ Diambil${time ? ' · ' + time : ''}</span>`
+      : state === 'Menunggu' ? '<span class="seat-state st-wait">Belum diambil</span>'
+      : `<span class="seat-state">${state}</span>`;
     return `<article class="queue-seat ${cls}">
-      <div class="seat-top"><span class="seat-number">${esc(item.number)}</span>${state !== 'Menunggu' ? `<span class="seat-state">${state}</span>` : ''}</div>
+      <div class="seat-top"><span class="seat-number">${esc(item.number)}</span>${badge}</div>
       <div class="seat-name" title="${esc(item.name)}">${esc(item.name)}</div>
       <div class="seat-phone">${esc(item.age)} tahun · ${esc(item.phone)}</div>
       <div class="seat-phone seat-addr" title="${esc(item.address)}">${esc(item.address)}</div>
-      ${pill}
       <div class="seat-actions">
-        ${open && !item.cardTaken ? btn('card', 'Kartu diambil', 'card wide') : ''}
-        ${open && item.cardTaken ? btn('uncard', 'Batalkan kartu', 'wide') : ''}
-        ${open ? btn('cancel', 'Batal') : btn('reopen', 'Buka lagi')}
-        ${btn('edit', 'Edit')}
-        ${btn('delete', 'Hapus', 'danger')}
+        ${open && !item.cardTaken ? btn('card', 'Kartu diambil', 'card span2') : ''}
+        ${open && item.cardTaken ? btn('uncard', 'Batalkan kartu', 'span2') : ''}
+        ${open ? btn('cancel', 'Batal') : btn('reopen', 'Buka lagi', 'span2')}
+        ${btn('edit', 'Edit', open ? '' : 'span2')}
       </div></article>`;
   }).join('');
 }
@@ -483,10 +482,27 @@ function openModal(item) {
   $('editPhone').value = item?.phone || '';
   $('editVisitDate').value = item?.date || $('filterDate').value;
   $('editNote').value = item?.note || '';
+  $('deleteQueue').classList.toggle('hidden', !item);
   $('queueModal').classList.remove('hidden');
   $('editName').focus();
 }
 function closeModal() { $('queueModal').classList.add('hidden'); }
+$('deleteQueue').onclick = async () => {
+  const item = queueItems.find(x => x.id === $('editId').value);
+  if (!item || busy) return;
+  if (!confirm('Hapus antrian ' + item.number + ' atas nama ' + item.name + '? Data tidak dapat dikembalikan.')) return;
+  busy = true;
+  try {
+    await api({ action: 'delete', pin: adminPin, id: item.id });
+    closeModal();
+    await loadQueues();
+    notify('Antrian dihapus.');
+  } catch (err) {
+    handleError(err);
+  } finally {
+    busy = false;
+  }
+};
 $('addQueueBtn').onclick = () => openModal(null);
 $('closeModal').onclick = closeModal;
 $('cancelModal').onclick = closeModal;
