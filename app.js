@@ -716,24 +716,30 @@ $('weeklyItems').addEventListener('click', async e => {
 });
 loadHolidays();
 /* Tetap masuk setelah halaman di-refresh */
+/* Tetap masuk setelah halaman di-refresh */
 (async function restoreAdmin() {
   let pin = '', view = '';
   try { pin = sessionStorage.getItem(PIN_KEY) || ''; view = sessionStorage.getItem(VIEW_KEY) || ''; } catch (e) {}
   if (view === 'admin') showView('admin');
   if (!pin) return;
+
+  // Langsung tampilkan dashboard tanpa menunggu server, supaya tidak berkedip
   adminPin = pin;
+  $('adminLogin').classList.add('hidden');
+  $('adminDashboard').classList.remove('hidden');
+
   try {
     await loadQueues();
     $('holidayFrom').min = today();
-    $('adminLogin').classList.add('hidden');
-    $('adminDashboard').classList.remove('hidden');
   } catch (err) {
+    // Gagal: kembali ke layar login
     adminPin = '';
+    $('adminDashboard').classList.add('hidden');
+    $('adminLogin').classList.remove('hidden');
     if (err.message === 'PIN admin salah.') { try { sessionStorage.removeItem(PIN_KEY); } catch (e) {} }
     else notify(err.message);
   }
 })();
-
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
 }
