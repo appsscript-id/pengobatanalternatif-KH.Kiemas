@@ -31,12 +31,12 @@
         <div class="form-card">
           <div class="card-heading"><div><span class="eyebrow">PENDAFTARAN</span><h2>Ambil nomor antrian</h2></div><span class="step-icon">01</span></div>
           <form id="takeForm">
-            <label for="patientName">Nama lengkap</label><input id="patientName" name="name" placeholder="Masukkan nama pasien" required minlength="2" autocomplete="name">
-            <label for="patientAge">Umur</label><input id="patientAge" name="age" type="number" min="1" max="120" placeholder="Masukkan umur (tahun)" required inputmode="numeric">
-            <label for="patientAddress">Alamat</label><textarea id="patientAddress" name="address" rows="2" placeholder="Masukkan alamat lengkap" required autocomplete="street-address"></textarea>
-            <label for="patientPhone">Nomor telepon atau WhatsApp</label><input id="patientPhone" name="phone" placeholder="Contoh: 081234567890" required inputmode="tel" autocomplete="tel">
+            <label for="patientName">Nama lengkap</label><input id="patientName" name="name" placeholder="Masukkan nama pasien" required minlength="2" maxlength="100" autocomplete="name">
+            <label for="patientAge">Umur</label><input id="patientAge" name="age" type="number" min="0" max="120" placeholder="Masukkan umur (tahun)" required inputmode="numeric">
+            <label for="patientAddress">Alamat</label><textarea id="patientAddress" name="address" rows="2" placeholder="Masukkan alamat lengkap" required autocomplete="street-address" maxlength="300"></textarea>
+            <label for="patientPhone">Nomor telepon atau WhatsApp</label><input id="patientPhone" name="phone" placeholder="Contoh: 081234567890" required inputmode="tel" autocomplete="tel" maxlength="20" pattern="[0-9+ \-]{8,20}" title="Isi dengan angka, contoh: 081234567890">
             <label for="visitDate">Tanggal kunjungan</label><input id="visitDate" name="visitDate" type="date" required>
-            <label for="patientNote">Catatan <span class="muted">(opsional)</span></label><textarea id="patientNote" name="note" rows="2" placeholder="Keluhan singkat atau keterangan"></textarea>
+            <label for="patientNote">Catatan <span class="muted">(opsional)</span></label><textarea id="patientNote" name="note" rows="2" placeholder="Keluhan singkat atau keterangan" maxlength="500"></textarea>
             <button class="btn btn-primary btn-wide" type="submit" id="takeBtn">Ambil Nomor Antrian <span>→</span></button>
             <p class="form-foot">Pastikan data yang dimasukkan sudah benar.</p>
           </form>
@@ -54,9 +54,9 @@
         <div class="login-card"><span class="eyebrow">AREA TERBATAS</span><h1>Masuk Admin</h1><p>Masukkan PIN untuk mengelola antrian pasien.</p><form id="loginForm"><label for="adminPin">PIN Admin</label><input id="adminPin" type="password" inputmode="numeric" placeholder="Masukkan PIN" required><button class="btn btn-primary btn-wide">Masuk Dashboard <span>→</span></button></form><small class="muted">Akses hanya untuk petugas yang berwenang.</small></div>
       </div>
       <div id="adminDashboard" class="hidden">
-        <div class="dashboard-head"><div><span class="eyebrow">PANEL PENGELOLAAN</span><h1>Dashboard Antrian</h1><p>Kelola dan pantau antrian pasien hari ini.</p></div><div class="head-actions"><input type="date" id="filterDate"><button class="btn btn-outline" id="refreshBtn">↻ Perbarui</button><button class="btn btn-dark" id="logoutBtn">Keluar</button></div></div>
+        <div class="dashboard-head"><div><span class="eyebrow">PANEL PENGELOLAAN</span><h1>Dashboard Antrian</h1><p>Kelola dan pantau antrian pasien per tanggal.</p></div><div class="head-actions"><input type="date" id="filterDate"><button class="btn btn-outline" id="refreshBtn">↻ Perbarui</button><button class="btn btn-dark" id="logoutBtn">Keluar</button></div></div>
         <div class="stats-grid">
-          <div class="stat-card"><span>Total Antrian</span><b id="statTotal">0</b><small>Terdaftar hari ini</small></div>
+          <div class="stat-card"><span>Total Antrian</span><b id="statTotal">0</b><small>Pada tanggal terpilih</small></div>
           <div class="stat-card"><span>Menunggu</span><b id="statWaiting">0</b><small>Belum dipanggil</small></div>
           <div class="stat-card"><span>Dipanggil</span><b id="statCalled">0</b><small>Sedang dilayani</small></div>
           <div class="stat-card"><span>Selesai</span><b id="statDone">0</b><small>Sudah dilayani</small></div>
@@ -73,7 +73,7 @@
 
   <div class="modal-backdrop hidden" id="queueModal">
     <div class="modal-card"><div class="modal-head"><div><span class="eyebrow">DATA PASIEN</span><h2 id="modalTitle">Tambah Antrian</h2></div><button class="icon-btn" id="closeModal" aria-label="Tutup">×</button></div>
-      <form id="queueForm"><input type="hidden" id="editId"><label for="editName">Nama pasien</label><input id="editName" required minlength="2"><label for="editAge">Umur</label><input id="editAge" type="number" min="1" max="120" required><label for="editAddress">Alamat</label><textarea id="editAddress" rows="2" required></textarea><label for="editPhone">Nomor telepon atau WhatsApp</label><input id="editPhone" required><label for="editVisitDate">Tanggal kunjungan</label><input id="editVisitDate" type="date" required><label for="editNote">Catatan</label><textarea id="editNote" rows="2"></textarea><div class="modal-actions"><button type="button" class="btn btn-outline" id="cancelModal">Batal</button><button class="btn btn-primary">Simpan Data</button></div></form>
+      <form id="queueForm"><input type="hidden" id="editId"><label for="editName">Nama pasien</label><input id="editName" required minlength="2" maxlength="100"><label for="editAge">Umur</label><input id="editAge" type="number" min="0" max="120" required><label for="editAddress">Alamat</label><textarea id="editAddress" rows="2" required maxlength="300"></textarea><label for="editPhone">Nomor telepon atau WhatsApp</label><input id="editPhone" required inputmode="tel" maxlength="20"><label for="editVisitDate">Tanggal kunjungan</label><input id="editVisitDate" type="date" required><label for="editNote">Catatan</label><textarea id="editNote" rows="2" maxlength="500"></textarea><div class="modal-actions"><button type="button" class="btn btn-outline" id="cancelModal">Batal</button><button class="btn btn-primary" type="submit" id="saveQueue">Simpan Data</button></div></form>
     </div>
   </div>
   <div class="toast" id="toast" role="status"></div>
