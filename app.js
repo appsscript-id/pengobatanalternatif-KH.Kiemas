@@ -6,16 +6,40 @@ let adminPin = '';
 let queueItems = [];
 let toastTimer;
 let busy = false;
+let holidays = []; // [{date, note}] tanggal libur yang akan datang
+let weeklyHolidays = []; // [{day, note}] libur rutin tiap pekan (0=Minggu..6=Sabtu)
+const DAY_NAMES = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
 const $ = (id) => document.getElementById(id);
 const dateStr = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 const today = () => dateStr(new Date());
 const maxDate = () => dateStr(new Date(Date.now() + MAX_DAYS_AHEAD * 86400000));
 
+const weekdayOf = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d).getDay(); };
+function holidayOf(date) {
+  if (!date) return null;
+  const h = holidays.find(x => x.date === date);
+  if (h) return h;
+  const w = weeklyHolidays.find(x => x.day === weekdayOf(date));
+  return w ? { date, note: w.note || ('Libur setiap hari ' + DAY_NAMES[w.day]), weekly: true } : null;
+}
+function firstOpenDate() {
+  for (let i = 0; i <= MAX_DAYS_AHEAD; i++) {
+    const d = dateStr(new Date(Date.now() + i * 86400000));
+    if (!holidayOf(d)) return d;
+  }
+  return today();
+}
+function checkVisitDate() {
+  const h = holidayOf($('visitDate').value);
+  $('visitDateHint').textContent = h ? 'Libur' + (h.note ? ' — ' + h.note : '') + '. Silakan pilih tanggal lain.' : '';
+  $('takeBtn').disabled = !!h;
+}
 function resetVisitDate() {
   $('visitDate').min = today();
   $('visitDate').max = maxDate();
-  $('visitDate').value = today();
+  $('visitDate').value = firstOpenDate();
+  checkVisitDate();
 }
 $('year').textContent = new Date().getFullYear();
 $('filterDate').value = today();
@@ -108,6 +132,8 @@ function loadSavedTicket() {
   } catch (e) {}
 }
 
+$('visitDate').addEventListener('change', checkVisitDate);
+
 $('takeForm').addEventListener('submit', async e => {
   e.preventDefault();
   const btn = $('takeBtn');
@@ -135,8 +161,9 @@ $('takeForm').addEventListener('submit', async e => {
   } catch (err) {
     notify(err.message);
   } finally {
-    btn.disabled = false;
     btn.innerHTML = 'Ambil Nomor Antrian <span>→</span>';
+    btn.disabled = false;
+    checkVisitDate();
   }
 });
 
@@ -305,6 +332,7 @@ $('loginForm').addEventListener('submit', async e => {
   adminPin = $('adminPin').value;
   try {
     await loadQueues();
+    $('holidayFrom').min = today();
     $('adminLogin').classList.add('hidden');
     $('adminDashboard').classList.remove('hidden');
     notify('Berhasil masuk dashboard.');
@@ -330,6 +358,7 @@ async function loadQueues() {
   $('statCancelled').textContent = queueItems.length - active.length;
   $('queueCount').textContent = queueItems.length + ' pasien terdaftar · ' + (data.summary.cardTaken || 0) + ' kartu sudah diambil';
   renderGrid();
+  renderHolidayUI();
 }
 
 let searchQuery = '';
@@ -503,6 +532,104 @@ $('resetDayBtn').onclick = async () => {
     busy = false;
   }
 };
+
+/* ---------- Hari libur ---------- */
+const shortDate = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }); };
+
+function renderHolidayUI() {
+  // Halaman pasien
+  const list = $('holidayList');
+  const parts = [];
+  if (weeklyHolidays.length) parts.push('Libur rutin: setiap ' + weeklyHolidays.map(w => DAY_NAMES[w.day]).join(', '));
+  if (holidays.length) parts.push('Tanggal libur: ' + holidays.slice(0, 6).map(h => shortDate(h.date) + (h.note ? ' (' + h.note + ')' : '')).join(' · ') + (holidays.length > 6 ? ' …' : ''));
+  if (parts.length) {
+    list.textContent = parts.join(' | ');
+    list.classList.remove('hidden');
+  } else list.classList.add('hidden');
+  if (holidayOf($('visitDate').value)) $('visitDate').value = firstOpenDate();
+  checkVisitDate();
+  // Dashboard admin
+  $('holidayItems').innerHTML = holidays.length
+    ? holidays.map(h => `<div class="holiday-item"><div><b>${esc(fmtDate(h.date))}</b><small>${esc(h.note || 'Libur')}</small></div><button class="mini-btn danger" data-date="${esc(h.date)}">Hapus</button></div>`).join('')
+    : '<p class="lookup-empty">Belum ada tanggal libur.</p>';
+  $('weeklyItems').innerHTML = weeklyHolidays.length
+    ? weeklyHolidays.map(w => `<div class="holiday-item"><div><b>Setiap hari ${esc(DAY_NAMES[w.day])}</b><small>${esc(w.note || 'Libur rutin')}</small></div><button class="mini-btn danger" data-day="${w.day}">Hapus</button></div>`).join('')
+    : '<p class="lookup-empty">Belum ada libur rutin mingguan.</p>';
+  const banner = $('holidayBanner'), h = holidayOf($('filterDate').value);
+  banner.textContent = h ? 'Tanggal ini libur' + (h.note ? ' — ' + h.note : '') + '. Pasien tidak dapat mendaftar pada tanggal ini.' : '';
+  banner.classList.toggle('hidden', !h);
+}
+
+async function loadHolidays() {
+  try {
+    const r = await api({ action: 'holidays' });
+    holidays = r.items || [];
+    weeklyHolidays = r.weekly || [];
+  } catch (e) { holidays = []; weeklyHolidays = []; }
+  renderHolidayUI();
+}
+
+$('holidayForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = $('holidayBtn');
+  btn.disabled = true;
+  try {
+    const r = await api({ action: 'addHoliday', pin: adminPin, date: $('holidayFrom').value, endDate: $('holidayTo').value, note: $('holidayNote').value.trim() });
+    $('holidayForm').reset();
+    await loadHolidays();
+    notify(r.message);
+  } catch (err) {
+    handleError(err);
+  } finally {
+    btn.disabled = false;
+  }
+});
+$('holidayItems').addEventListener('click', async e => {
+  const b = e.target.closest('[data-date]');
+  if (!b || busy) return;
+  if (!confirm('Hapus tanggal libur ' + fmtDate(b.dataset.date) + '?')) return;
+  busy = true;
+  try {
+    await api({ action: 'removeHoliday', pin: adminPin, date: b.dataset.date });
+    await loadHolidays();
+    notify('Tanggal libur dihapus.');
+  } catch (err) {
+    handleError(err);
+  } finally {
+    busy = false;
+  }
+});
+$('weeklyForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = $('weeklyBtn');
+  btn.disabled = true;
+  try {
+    const r = await api({ action: 'addWeekly', pin: adminPin, day: $('weeklyDay').value, note: $('weeklyNote').value.trim() });
+    $('weeklyForm').reset();
+    await loadHolidays();
+    notify(r.message);
+  } catch (err) {
+    handleError(err);
+  } finally {
+    btn.disabled = false;
+  }
+});
+$('weeklyItems').addEventListener('click', async e => {
+  const b = e.target.closest('[data-day]');
+  if (!b || busy) return;
+  if (!confirm('Hapus libur rutin setiap hari ' + DAY_NAMES[b.dataset.day] + '?')) return;
+  busy = true;
+  try {
+    await api({ action: 'removeWeekly', pin: adminPin, day: b.dataset.day });
+    await loadHolidays();
+    notify('Libur rutin dihapus.');
+  } catch (err) {
+    handleError(err);
+  } finally {
+    busy = false;
+  }
+});
+loadHolidays();
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
