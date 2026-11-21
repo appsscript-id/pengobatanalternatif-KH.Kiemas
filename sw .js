@@ -1,4 +1,4 @@
-const CACHE = 'antrian-kiemas-v5';
+const CACHE = 'antrian-kiemas-v6';
 const ASSETS = ['./', './index.html', './style.css', './app.js', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', event => {
