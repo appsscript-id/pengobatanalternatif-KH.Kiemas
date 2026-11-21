@@ -191,8 +191,9 @@ function wrapLines(ctx, text, maxW) {
 }
 async function drawTicketImage(t) {
   const H1 = "Manrope, 'DM Sans', Arial, sans-serif", H2 = "'DM Sans', Arial, sans-serif";
-  try { await Promise.all([document.fonts.load('800 64px Manrope'), document.fonts.load("700 14px 'DM Sans'")]); } catch (e) {}
-  const W = 360, H = 520, S = 2;
+  const GOLD = '#c8a96a';
+  try { await Promise.all([document.fonts.load('800 70px Manrope'), document.fonts.load("700 14px 'DM Sans'")]); } catch (e) {}
+  const W = 360, H = 590, S = 2;
   const canvas = document.createElement('canvas');
   canvas.width = W * S; canvas.height = H * S;
   const ctx = canvas.getContext('2d');
@@ -200,48 +201,79 @@ async function drawTicketImage(t) {
   ctx.fillStyle = '#f5f8fa'; ctx.fillRect(0, 0, W, H);
   const x = 20, y = 20, w = W - 40, h = H - 40, cx = x + w / 2;
 
+  // bayangan kartu
   ctx.save();
-  roundRect(ctx, x, y, w, h, 18); ctx.fillStyle = '#fff'; ctx.fill(); ctx.clip();
-  ctx.fillStyle = '#102a43'; ctx.fillRect(x, y, w, 64);
+  ctx.shadowColor = 'rgba(16,42,67,.16)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8;
+  roundRect(ctx, x, y, w, h, 20); ctx.fillStyle = '#fff'; ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+  roundRect(ctx, x, y, w, h, 20); ctx.clip();
+  ctx.fillStyle = '#fff'; ctx.fillRect(x, y, w, h);
+
+  // header
+  const hg = ctx.createLinearGradient(x, y, x + w, y + 72);
+  hg.addColorStop(0, '#0c2034'); hg.addColorStop(1, '#17395c');
+  ctx.fillStyle = hg; ctx.fillRect(x, y, w, 72);
+  ctx.fillStyle = GOLD; ctx.fillRect(x, y + 72, w, 3);
+  ctx.beginPath(); ctx.arc(x + 40, y + 36, 18, 0, Math.PI * 2);
+  ctx.strokeStyle = GOLD; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = '#e3cc96'; ctx.textAlign = 'center'; ctx.font = '800 17px ' + H1; ctx.fillText('K', x + 40, y + 42);
   ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
-  ctx.font = '800 13px ' + H1; ctx.fillText('KH. KIEMAS', x + 20, y + 30);
-  ctx.globalAlpha = .65; ctx.font = '700 8px ' + H2; ctx.fillText('PENGOBATAN ALTERNATIF', x + 20, y + 44); ctx.globalAlpha = 1;
-  ctx.textAlign = 'right'; ctx.font = '700 10px ' + H2; ctx.fillText('BUKTI PENDAFTARAN', x + w - 20, y + 37);
+  ctx.font = '800 13px ' + H1; ctx.fillText('KH. KIEMAS', x + 68, y + 33);
+  ctx.globalAlpha = .65; ctx.font = '700 8px ' + H2; ctx.fillText('PENGOBATAN ALTERNATIF', x + 68, y + 47); ctx.globalAlpha = 1;
+  ctx.font = '700 8.5px ' + H2;
+  const bt = 'BUKTI PENDAFTARAN', bw = ctx.measureText(bt).width + 22;
+  roundRect(ctx, x + w - 20 - bw, y + 25, bw, 22, 11);
+  ctx.strokeStyle = 'rgba(200,169,106,.66)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.fillStyle = '#ecdcb0'; ctx.textAlign = 'center'; ctx.fillText(bt, x + w - 20 - bw / 2, y + 39);
 
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#2b9a91'; ctx.font = '800 10px ' + H1; ctx.fillText('NOMOR ANTRIAN', cx, y + 102);
-  ctx.fillStyle = '#102a43'; ctx.font = '800 66px ' + H1; ctx.fillText(t.number, cx, y + 172);
+  // nomor antrian
+  ctx.fillStyle = '#2b9a91'; ctx.font = '800 10px ' + H1;
+  const et = 'NOMOR ANTRIAN', ew = ctx.measureText(et).width;
+  ctx.fillText(et, cx, y + 112);
+  ctx.strokeStyle = GOLD; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(cx - ew / 2 - 12, y + 108); ctx.lineTo(cx - ew / 2 - 40, y + 108);
+  ctx.moveTo(cx + ew / 2 + 12, y + 108); ctx.lineTo(cx + ew / 2 + 40, y + 108); ctx.stroke();
+  ctx.fillStyle = '#102a43'; ctx.font = '800 72px ' + H1; ctx.fillText(t.number, cx, y + 186);
+  roundRect(ctx, cx - 23, y + 202, 46, 3, 1.5); ctx.fillStyle = GOLD; ctx.fill();
 
-  const cy = y + 204;
+  // garis sobekan
+  const cy = y + 236;
   ctx.setLineDash([5, 4]); ctx.strokeStyle = '#dbe3e9'; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(x + 18, cy); ctx.lineTo(x + w - 18, cy); ctx.stroke(); ctx.setLineDash([]);
   ctx.fillStyle = '#f5f8fa';
   ctx.beginPath(); ctx.arc(x, cy, 11, 0, Math.PI * 2); ctx.fill();
   ctx.beginPath(); ctx.arc(x + w, cy, 11, 0, Math.PI * 2); ctx.fill();
 
+  // data pasien
   ctx.textAlign = 'left';
   const colW = (w - 48) / 2;
   const field = (label, value, fx, fy, maxW) => {
-    ctx.fillStyle = '#91a0ab'; ctx.font = '700 9px ' + H2; ctx.fillText(label.toUpperCase(), fx, fy);
-    ctx.fillStyle = '#102a43'; ctx.font = '700 14px ' + H2;
+    ctx.fillStyle = '#8d9ba7'; ctx.font = '700 9px ' + H2; ctx.fillText(label.toUpperCase(), fx, fy);
+    ctx.fillStyle = '#102a43'; ctx.font = '700 14.5px ' + H2;
     const lines = wrapLines(ctx, value, maxW).slice(0, 2);
     lines.forEach((ln, i) => ctx.fillText(ln, fx, fy + 20 + i * 18));
     return fy + 20 + lines.length * 18;
   };
+  const sep = (sy) => { ctx.strokeStyle = '#eef2f5'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x + 24, sy); ctx.lineTo(x + w - 24, sy); ctx.stroke(); };
   let yy = cy + 38;
-  yy = field('Nama pasien', t.name, x + 24, yy, w - 48) + 18;
-  yy = field('Tanggal kunjungan', fmtDate(t.date), x + 24, yy, w - 48) + 18;
+  yy = field('Nama pasien', t.name, x + 24, yy, w - 48) + 12; sep(yy); yy += 22;
+  yy = field('Tanggal kunjungan', fmtDate(t.date), x + 24, yy, w - 48) + 12; sep(yy); yy += 22;
   field('Umur', t.age + ' tahun', x + 24, yy, colW);
   field('Didaftarkan', t.issued, x + 24 + colW + 8, yy, colW);
 
-  const bh = 58, by = y + h - bh - 20;
-  roundRect(ctx, x + 24, by, w - 48, bh, 10); ctx.fillStyle = '#f1f8f7'; ctx.fill();
+  // catatan & penutup
+  const bh = 56, by = y + h - bh - 56;
+  roundRect(ctx, x + 24, by, w - 48, bh, 10); ctx.fillStyle = '#f2f8f7'; ctx.fill();
+  ctx.strokeStyle = '#dcebe8'; ctx.lineWidth = 1; ctx.stroke();
   ctx.fillStyle = '#2b6f69'; ctx.font = '500 10.5px ' + H2; ctx.textAlign = 'center';
   const noteLines = wrapLines(ctx, 'Tunjukkan bukti ini kepada petugas untuk menerima kartu antrian fisik dengan nomor yang sama.', w - 76);
   noteLines.forEach((ln, i) => ctx.fillText(ln, cx, by + (bh - noteLines.length * 15) / 2 + 11 + i * 15));
+  ctx.fillStyle = '#9c7d3f'; ctx.font = '700 9px ' + H2;
+  ctx.fillText('S E M O G A   L E K A S   S E M B U H', cx, y + h - 22);
   ctx.restore();
 
-  roundRect(ctx, x, y, w, h, 18); ctx.strokeStyle = '#e5ebf0'; ctx.lineWidth = 1; ctx.stroke();
   return canvas;
 }
 async function saveTicketImage() {
