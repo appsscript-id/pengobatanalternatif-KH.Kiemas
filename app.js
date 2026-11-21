@@ -122,8 +122,12 @@ function hideTicket() {
   try { localStorage.removeItem(STORE_KEY); } catch (e) {}
   $('ticketResult').classList.add('hidden');
   $('patientHero').classList.remove('hidden');
-}
-// Bukti terakhir tetap tampil bila halaman dibuka ulang, sampai tanggal kunjungan lewat.
+  // Kembalikan bagian "cari bukti" ke keadaan awal
+  $('lookupForm').reset();
+  $('lookupForm').classList.add('hidden');
+  $('lookupResult').innerHTML = '';
+  lookupItems = [];
+}// Bukti terakhir tetap tampil bila halaman dibuka ulang, sampai tanggal kunjungan lewat.
 function loadSavedTicket() {
   try {
     const t = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
