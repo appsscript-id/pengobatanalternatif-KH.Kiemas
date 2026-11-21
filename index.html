@@ -70,6 +70,17 @@
           <p class="ticket-note">Tunjukkan bukti ini kepada petugas untuk menerima kartu antrian fisik dengan nomor yang sama.</p>
         </div>
         <div class="proof-actions"><button class="btn btn-primary" id="saveTicket">Simpan Gambar</button><button class="btn btn-outline" id="printTicket">Cetak</button><button class="btn btn-dark" id="newTicket">Daftar Baru</button></div>
+        <div class="proof-manage hidden" id="proofManage">
+          <button type="button" class="link-btn" id="moveTicketBtn">Ubah tanggal kunjungan</button>
+          <button type="button" class="link-btn danger" id="cancelTicketBtn">Batalkan antrian</button>
+        </div>
+        <form class="move-panel hidden" id="movePanel">
+          <label for="moveDate">Tanggal kunjungan baru</label>
+          <input id="moveDate" type="date" required>
+          <p class="date-hint" id="moveHint"></p>
+          <div class="move-actions"><button type="button" class="btn btn-outline" id="moveCancel">Tutup</button><button class="btn btn-primary" type="submit" id="moveSave">Simpan Tanggal</button></div>
+          <p class="form-foot">Nomor antrian akan berganti sesuai urutan di tanggal baru.</p>
+        </form>
       </section>
       <section class="info-strip"><div><span class="info-icon">01</span><p><b>Isi data pasien</b><small>Masukkan identitas dan kontak.</small></p></div><div><span class="info-icon">02</span><p><b>Simpan bukti</b><small>Simpan gambar bukti pendaftaran.</small></p></div><div><span class="info-icon">03</span><p><b>Tukar kartu</b><small>Tunjukkan bukti ke petugas, lalu tunggu dipanggil.</small></p></div></section>
     </section>
@@ -86,13 +97,24 @@
           <div class="stat-card"><span>Kartu Sudah Diambil</span><b id="statTaken">0</b><small>Sudah diberi kartu fisik</small></div>
           <div class="stat-card"><span>Dibatalkan</span><b id="statCancelled">0</b><small>Antrian batal</small></div>
         </div>
-        <div class="queue-toolbar"><div><h2>Denah Antrian</h2><p>Pilih kartu pasien untuk mengelola status antrian.</p></div><button class="btn btn-primary" id="addQueueBtn">＋ Tambah Antrian</button></div>
+        <div class="queue-toolbar"><div><h2>Denah Antrian</h2><p>Pilih kartu pasien untuk mengelola status antrian.</p></div>
+          <div class="toolbar-actions"><button class="btn btn-outline" id="printListBtn">Cetak Daftar</button><button class="btn btn-outline" id="printCardsBtn">Cetak Kartu</button><button class="btn btn-primary" id="addQueueBtn">＋ Tambah Antrian</button></div>
+        </div>
         <div class="legend"><span><i class="dot dot-none"></i> Kartu belum diambil</span><span><i class="dot dot-card"></i> Kartu sudah diambil</span><span><i class="dot dot-cancel"></i> Batal</span></div>
         <div class="queue-search"><input id="queueSearch" type="search" placeholder="Cari nomor, nama, atau telepon · Enter = kartu diambil" autocomplete="off"></div>
         <div class="screen-label"><span></span><b>DAFTAR ANTRIAN PASIEN</b><span></span></div>
         <div class="holiday-banner hidden" id="holidayBanner"></div>
         <div class="seat-grid" id="queueGrid"><div class="empty-state">Belum ada data antrian.</div></div>
         <div class="admin-bottom"><span id="queueCount">0 pasien terdaftar</span><button class="text-danger" id="resetDayBtn">Kosongkan antrian tanggal ini</button></div>
+
+        <section class="holiday-panel quota-panel">
+          <div class="queue-toolbar"><div><h2>Kuota Pendaftaran Online</h2><p>Batas pasien per hari untuk pendaftaran online. Isi 0 untuk tanpa batas. Admin tetap bisa menambah antrian lewat dashboard.</p></div></div>
+          <form id="quotaForm" class="holiday-form">
+            <div><label for="quotaInput">Maksimal pasien per hari</label><input type="number" id="quotaInput" min="0" max="999" inputmode="numeric" required></div>
+            <button class="btn btn-primary" id="quotaBtn">Simpan Kuota</button>
+          </form>
+        </section>
+
         <section class="holiday-panel">
           <div class="queue-toolbar"><div><h2>Hari Libur</h2><p>Pasien tidak dapat mengambil antrian pada tanggal libur.</p></div></div>
           <form id="holidayForm" class="holiday-form">
@@ -127,6 +149,7 @@
       <div class="modal-actions"><button type="button" class="btn btn-outline" id="viewClose">Tutup</button><button type="button" class="btn btn-primary" id="viewEdit">Edit Data</button></div>
     </div>
   </div>
+  <div id="printArea" aria-hidden="true"></div>
   <div class="toast" id="toast" role="status"></div>
   <script src="app.js"></script>
 </body>
