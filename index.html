@@ -35,6 +35,7 @@
             <label for="patientAge">Umur</label><input id="patientAge" name="age" type="number" min="1" max="120" placeholder="Masukkan umur (tahun)" required inputmode="numeric">
             <label for="patientAddress">Alamat</label><textarea id="patientAddress" name="address" rows="2" placeholder="Masukkan alamat lengkap" required autocomplete="street-address"></textarea>
             <label for="patientPhone">Nomor telepon atau WhatsApp</label><input id="patientPhone" name="phone" placeholder="Contoh: 081234567890" required inputmode="tel" autocomplete="tel">
+            <label for="visitDate">Tanggal kunjungan</label><input id="visitDate" name="visitDate" type="date" required>
             <label for="patientNote">Catatan <span class="muted">(opsional)</span></label><textarea id="patientNote" name="note" rows="2" placeholder="Keluhan singkat atau keterangan"></textarea>
             <button class="btn btn-primary btn-wide" type="submit" id="takeBtn">Ambil Nomor Antrian <span>→</span></button>
             <p class="form-foot">Pastikan data yang dimasukkan sudah benar.</p>
@@ -72,7 +73,7 @@
 
   <div class="modal-backdrop hidden" id="queueModal">
     <div class="modal-card"><div class="modal-head"><div><span class="eyebrow">DATA PASIEN</span><h2 id="modalTitle">Tambah Antrian</h2></div><button class="icon-btn" id="closeModal" aria-label="Tutup">×</button></div>
-      <form id="queueForm"><input type="hidden" id="editId"><label for="editName">Nama pasien</label><input id="editName" required minlength="2"><label for="editAge">Umur</label><input id="editAge" type="number" min="1" max="120" required><label for="editAddress">Alamat</label><textarea id="editAddress" rows="2" required></textarea><label for="editPhone">Nomor telepon atau WhatsApp</label><input id="editPhone" required><label for="editNote">Catatan</label><textarea id="editNote" rows="2"></textarea><div class="modal-actions"><button type="button" class="btn btn-outline" id="cancelModal">Batal</button><button class="btn btn-primary">Simpan Data</button></div></form>
+      <form id="queueForm"><input type="hidden" id="editId"><label for="editName">Nama pasien</label><input id="editName" required minlength="2"><label for="editAge">Umur</label><input id="editAge" type="number" min="1" max="120" required><label for="editAddress">Alamat</label><textarea id="editAddress" rows="2" required></textarea><label for="editPhone">Nomor telepon atau WhatsApp</label><input id="editPhone" required><label for="editVisitDate">Tanggal kunjungan</label><input id="editVisitDate" type="date" required><label for="editNote">Catatan</label><textarea id="editNote" rows="2"></textarea><div class="modal-actions"><button type="button" class="btn btn-outline" id="cancelModal">Batal</button><button class="btn btn-primary">Simpan Data</button></div></form>
     </div>
   </div>
   <div class="toast" id="toast" role="status"></div>
