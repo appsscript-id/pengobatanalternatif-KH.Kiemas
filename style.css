@@ -26,24 +26,26 @@
 .holiday-items{display:grid;gap:8px;margin-top:14px}.holiday-item{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px}.holiday-item b{font-size:13px;color:var(--navy)}.holiday-item small{display:block;color:#82909b;font-size:11px;margin-top:3px}
 select{border:1px solid #dce5eb;border-radius:9px;padding:13px 14px;color:var(--ink);background:#fff;outline:none;font:inherit;transition:.2s}select:focus{border-color:#5aa9a2;box-shadow:0 0 0 3px #2b9a9118}.weekly-head{margin-top:34px}
 
-/* ===== Kartu antrian: teks lebih besar & tombol rata ===== */
-.seat-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-@media(max-width:900px){.seat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:620px){.seat-grid{grid-template-columns:1fr}}
-.queue-seat{padding:18px 18px 16px;min-height:0;border-radius:15px}
-.seat-top{margin-bottom:14px}
-.seat-number{font-size:26px;letter-spacing:.02em}
-.seat-state{font-size:12px;padding:6px 12px}
-.seat-name{font-size:17px;line-height:1.3}
-.seat-phone{font-size:13.5px;margin-top:6px;color:#5f7280}
-.seat-addr{line-height:1.45}
-.card-pill{font-size:12.5px;padding:6px 12px;margin-top:14px}
-.seat-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px}
-.mini-btn{padding:10px 6px;font-size:13px;border-radius:10px;min-height:40px;white-space:nowrap;text-align:center}
+/* ===== Kartu antrian: ringkas, teks terbaca, tombol rata ===== */
+.seat-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media(max-width:1000px){.seat-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:800px){.seat-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}}
+.queue-seat{padding:14px;min-height:0;border-radius:13px}
+.seat-top{margin-bottom:10px}
+.seat-number{font-size:21px}
+.seat-state{font-size:10.5px;padding:5px 10px}
+.queue-seat.cancelled .seat-state{font-size:10.5px;padding:5px 10px}
+.seat-name{font-size:15px;line-height:1.3}
+.seat-phone{font-size:12px;margin-top:4px;color:#5f7280}
+.seat-addr{line-height:1.4}
+.card-pill{font-size:11px;padding:4px 10px;margin-top:10px}
+.seat-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:12px}
+.mini-btn{padding:8px 4px;font-size:12px;border-radius:9px;min-height:34px;white-space:nowrap;text-align:center}
 .mini-btn:hover:not(:disabled){background:#f3f7f9}
-.mini-btn.wide{grid-column:1/-1;font-size:13.5px}
+.mini-btn.wide{grid-column:1/-1}
 .mini-btn.card{font-weight:800}
 .mini-btn.card:hover:not(:disabled){background:#c5e6d2}
 .mini-btn.danger{background:#fdf1f1;border-color:#f0cccc;color:#b03a3a}
 .mini-btn.danger:hover:not(:disabled){background:#fae0e0}
-.holiday-item .mini-btn{padding:10px 16px}
+.holiday-item .mini-btn{padding:9px 16px}
+@media(max-width:560px){.queue-seat{padding:12px}.seat-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.seat-actions .mini-btn.danger{grid-column:1/-1}.seat-name{font-size:14px}}
