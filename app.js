@@ -73,6 +73,11 @@ document.querySelectorAll('[data-view]').forEach(btn => btn.addEventListener('cl
 const STORE_KEY = 'antrianKiemasBukti';
 let currentTicket = null;
 
+function fmtIssued(d) {
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return '-';
+  return dt.toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
 function fmtDate(s) {
   const [y, m, d] = s.split('-').map(Number);
   return new Date(y, m - 1, d).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -247,6 +252,38 @@ $('newTicket').onclick = () => {
 };
 loadSavedTicket();
 
+/* Pasien lupa menyimpan bukti: cari kembali memakai nomor telepon */
+let lookupItems = [];
+$('lookupToggle').onclick = () => {
+  $('lookupForm').classList.toggle('hidden');
+  if (!$('lookupForm').classList.contains('hidden')) $('lookupPhone').focus();
+};
+$('lookupForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = $('lookupBtn'), box = $('lookupResult');
+  btn.disabled = true;
+  box.innerHTML = '';
+  try {
+    const data = await api({ action: 'find', phone: $('lookupPhone').value.trim() });
+    lookupItems = data.items || [];
+    box.innerHTML = lookupItems.length
+      ? lookupItems.map((it, i) => `<button type="button" class="lookup-item" data-i="${i}"><b>${esc(it.number)}</b><span>${esc(it.name)}<small>${esc(fmtDate(it.date))}</small></span><em>Lihat bukti</em></button>`).join('')
+      : '<p class="lookup-empty">Tidak ada pendaftaran aktif dengan nomor tersebut. Pastikan nomornya sama dengan saat mendaftar.</p>';
+  } catch (err) {
+    notify(err.message);
+  } finally {
+    btn.disabled = false;
+  }
+});
+$('lookupResult').addEventListener('click', e => {
+  const b = e.target.closest('[data-i]');
+  const it = b && lookupItems[b.dataset.i];
+  if (!it) return;
+  const t = { number: it.number, name: it.name, age: it.age, date: it.date, issued: fmtIssued(it.created) };
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(t)); } catch (err) {}
+  showTicket(t);
+});
+
 /* ---------- Admin: login ---------- */
 function logout() {
   adminPin = '';
@@ -286,21 +323,27 @@ $('filterDate').onchange = () => { searchQuery = ''; $('queueSearch').value = ''
 async function loadQueues() {
   const data = await api({ action: 'list', pin: adminPin, date: $('filterDate').value });
   queueItems = data.items || [];
-  $('statTotal').textContent = data.summary.total;
-  $('statWaiting').textContent = data.summary.waiting;
-  $('statCalled').textContent = data.summary.called;
-  $('statDone').textContent = data.summary.done;
+  const active = queueItems.filter(i => i.status !== 'Batal');
+  $('statTotal').textContent = queueItems.length;
+  $('statPending').textContent = active.filter(i => !i.cardTaken).length;
+  $('statTaken').textContent = active.filter(i => i.cardTaken).length;
+  $('statCancelled').textContent = queueItems.length - active.length;
   $('queueCount').textContent = queueItems.length + ' pasien terdaftar · ' + (data.summary.cardTaken || 0) + ' kartu sudah diambil';
   renderGrid();
 }
 
 let searchQuery = '';
+const normPhone = (v) => String(v || '').replace(/\D/g, '').replace(/^(62|0)/, '');
 const numOf = (n) => Number(String(n).replace(/^\D+/, '')) || 0;
 
 function filteredItems() {
   const q = searchQuery.trim().toLowerCase();
   if (!q) return queueItems;
-  if (/^\d+$/.test(q)) return queueItems.filter(i => numOf(i.number) === Number(q)); // "10" atau "010" -> A010
+  if (/^\d+$/.test(q)) {
+    // 6 digit ke atas dianggap nomor telepon; selebihnya nomor antrian ("10" atau "010" -> A010)
+    if (q.length >= 6) return queueItems.filter(i => normPhone(i.phone).includes(normPhone(q)));
+    return queueItems.filter(i => numOf(i.number) === Number(q));
+  }
   return queueItems.filter(i => i.number.toLowerCase().includes(q) || i.name.toLowerCase().includes(q));
 }
 
@@ -326,7 +369,7 @@ function renderGrid() {
       ? `<span class="card-pill">✓ Kartu diambil${time ? ' · ' + time : ''}</span>`
       : (state === 'Batal' ? '' : '<span class="card-pill off">Kartu belum diambil</span>');
     return `<article class="queue-seat ${cls}">
-      <div class="seat-top"><span class="seat-number">${esc(item.number)}</span><span class="seat-state">${state}</span></div>
+      <div class="seat-top"><span class="seat-number">${esc(item.number)}</span>${state !== 'Menunggu' ? `<span class="seat-state">${state}</span>` : ''}</div>
       <div class="seat-name" title="${esc(item.name)}">${esc(item.name)}</div>
       <div class="seat-phone">${esc(item.age)} tahun · ${esc(item.phone)}</div>
       <div class="seat-phone seat-addr" title="${esc(item.address)}">${esc(item.address)}</div>
@@ -334,8 +377,6 @@ function renderGrid() {
       <div class="seat-actions">
         ${open && !item.cardTaken ? btn('card', 'Kartu diambil', 'card') : ''}
         ${open && item.cardTaken ? btn('uncard', 'Batalkan kartu') : ''}
-        ${state === 'Menunggu' ? btn('call', 'Panggil', 'primary') : ''}
-        ${open ? btn('complete', 'Selesai') : ''}
         ${open ? btn('cancel', 'Batal') : btn('reopen', 'Buka lagi')}
         ${btn('edit', 'Edit')}
         ${btn('delete', 'Hapus', 'danger')}
