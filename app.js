@@ -61,6 +61,28 @@ function notify(message) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
 }
 
+/* Dialog konfirmasi sendiri, pengganti dialog bawaan browser yang menampilkan nama situs */
+function askConfirm(message, okLabel = 'Ya, lanjutkan', title = 'Konfirmasi') {
+  return new Promise(resolve => {
+    const m = $('confirmModal'), yes = $('confirmYes'), no = $('confirmNo');
+    $('confirmTitle').textContent = title;
+    $('confirmText').textContent = message;
+    yes.textContent = okLabel;
+    m.classList.remove('hidden');
+    const done = v => {
+      m.classList.add('hidden');
+      yes.onclick = no.onclick = m.onclick = null;
+      document.removeEventListener('keydown', onKey, true);
+      resolve(v);
+    };
+    const onKey = e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(false); } };
+    yes.onclick = () => done(true);
+    no.onclick = () => done(false);
+    m.onclick = e => { if (e.target === m) done(false); };
+    document.addEventListener('keydown', onKey, true);
+  });
+}
+
 function api(params) {
   if (!API_URL || API_URL.includes('TEMPEL_URL')) {
     return Promise.reject(new Error('URL Web App belum diatur pada app.js.'));
@@ -349,7 +371,7 @@ $('movePanel').addEventListener('submit', async e => {
 });
 $('cancelTicketBtn').onclick = async () => {
   if (!currentTicket || !currentTicket.phone || busy) return;
-  if (!confirm('Batalkan antrian nomor ' + currentTicket.number + ' tanggal ' + fmtDate(currentTicket.date) + '?')) return;
+  if (!(await askConfirm('Batalkan antrian nomor ' + currentTicket.number + ' tanggal ' + fmtDate(currentTicket.date) + '?', 'Ya, batalkan', 'Batalkan antrian'))) return;
   busy = true;
   try {
     const r = await api({ action: 'cancelMine', phone: currentTicket.phone, date: currentTicket.date, number: currentTicket.number });
@@ -527,7 +549,7 @@ $('queueGrid').addEventListener('click', async e => {
   if (!item) return;
   const action = b.dataset.action;
   if (action === 'edit') { openModal(item); return; }
-  if (action === 'delete' && !confirm('Hapus antrian ' + item.number + ' atas nama ' + item.name + '?')) return;
+  if (action === 'delete' && !(await askConfirm('Hapus antrian ' + item.number + ' atas nama ' + item.name + '?', 'Ya, hapus', 'Hapus antrian'))) return;
   const request = action === 'card' ? { action: 'card', value: '1' }
     : action === 'uncard' ? { action: 'card', value: '0' }
     : { action };
@@ -673,7 +695,7 @@ $('queueForm').addEventListener('focusin', e => {
 $('deleteQueue').onclick = async () => {
   const item = queueItems.find(x => x.id === $('editId').value);
   if (!item || busy) return;
-  if (!confirm('Hapus antrian ' + item.number + ' atas nama ' + item.name + '? Data tidak dapat dikembalikan.')) return;
+  if (!(await askConfirm('Hapus antrian ' + item.number + ' atas nama ' + item.name + '? Data tidak dapat dikembalikan.', 'Ya, hapus', 'Hapus antrian'))) return;
   busy = true;
   try {
     await api({ action: 'delete', pin: adminPin, id: item.id });
@@ -730,7 +752,7 @@ $('queueForm').onsubmit = async e => {
 
 $('resetDayBtn').onclick = async () => {
   if (busy) return;
-  if (!confirm('Yakin menghapus SEMUA antrian pada tanggal ' + $('filterDate').value + '? Tindakan ini tidak dapat dibatalkan.')) return;
+  if (!(await askConfirm('Yakin menghapus SEMUA antrian pada tanggal ' + $('filterDate').value + '? Tindakan ini tidak dapat dibatalkan.', 'Ya, kosongkan', 'Kosongkan antrian'))) return;
   busy = true;
   try {
     await api({ action: 'reset', pin: adminPin, date: $('filterDate').value });
@@ -807,7 +829,7 @@ $('holidayForm').addEventListener('submit', async e => {
 $('holidayItems').addEventListener('click', async e => {
   const b = e.target.closest('[data-date]');
   if (!b || busy) return;
-  if (!confirm('Hapus tanggal libur ' + fmtDate(b.dataset.date) + '?')) return;
+  if (!(await askConfirm('Hapus tanggal libur ' + fmtDate(b.dataset.date) + '?', 'Ya, hapus', 'Hapus tanggal libur'))) return;
   busy = true;
   try {
     await api({ action: 'removeHoliday', pin: adminPin, date: b.dataset.date });
@@ -837,7 +859,7 @@ $('weeklyForm').addEventListener('submit', async e => {
 $('weeklyItems').addEventListener('click', async e => {
   const b = e.target.closest('[data-day]');
   if (!b || busy) return;
-  if (!confirm('Hapus libur rutin setiap hari ' + DAY_NAMES[b.dataset.day] + '?')) return;
+  if (!(await askConfirm('Hapus libur rutin setiap hari ' + DAY_NAMES[b.dataset.day] + '?', 'Ya, hapus', 'Hapus libur rutin'))) return;
   busy = true;
   try {
     await api({ action: 'removeWeekly', pin: adminPin, day: b.dataset.day });
