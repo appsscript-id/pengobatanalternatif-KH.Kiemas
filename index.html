@@ -35,7 +35,7 @@
             <label for="patientAge">Umur</label><input id="patientAge" name="age" type="number" min="0" max="120" placeholder="Masukkan umur (tahun)" required inputmode="numeric">
             <label for="patientAddress">Alamat</label><textarea id="patientAddress" name="address" rows="2" placeholder="Masukkan alamat lengkap" required autocomplete="street-address" maxlength="300"></textarea>
             <label for="patientPhone">Nomor telepon atau WhatsApp</label><input id="patientPhone" name="phone" placeholder="Contoh: 081234567890" required inputmode="tel" autocomplete="tel" maxlength="20" pattern="[0-9+ \-]{8,20}" title="Isi dengan angka, contoh: 081234567890">
-            <label for="visitDate">Tanggal kunjungan</label><input id="visitDate" name="visitDate" type="date" required>
+            <label for="visitDate">Tanggal kunjungan</label><input id="visitDate" name="visitDate" type="date" required><p class="date-hint" id="visitDateHint"></p><p class="holiday-list hidden" id="holidayList"></p>
             <label for="patientNote">Catatan <span class="muted">(opsional)</span></label><textarea id="patientNote" name="note" rows="2" placeholder="Keluhan singkat atau keterangan" maxlength="500"></textarea>
             <button class="btn btn-primary btn-wide" type="submit" id="takeBtn">Ambil Nomor Antrian <span>→</span></button>
             <p class="form-foot">Pastikan data yang dimasukkan sudah benar.</p>
@@ -85,8 +85,26 @@
         <div class="legend"><span><i class="dot dot-none"></i> Kartu belum diambil</span><span><i class="dot dot-card"></i> Kartu sudah diambil</span><span><i class="dot dot-cancel"></i> Batal</span></div>
         <div class="queue-search"><input id="queueSearch" type="search" placeholder="Cari nomor, nama, atau telepon · Enter = kartu diambil" autocomplete="off"></div>
         <div class="screen-label"><span></span><b>DAFTAR ANTRIAN PASIEN</b><span></span></div>
+        <div class="holiday-banner hidden" id="holidayBanner"></div>
         <div class="seat-grid" id="queueGrid"><div class="empty-state">Belum ada data antrian.</div></div>
         <div class="admin-bottom"><span id="queueCount">0 pasien terdaftar</span><button class="text-danger" id="resetDayBtn">Kosongkan antrian tanggal ini</button></div>
+        <section class="holiday-panel">
+          <div class="queue-toolbar"><div><h2>Hari Libur</h2><p>Pasien tidak dapat mengambil antrian pada tanggal libur.</p></div></div>
+          <form id="holidayForm" class="holiday-form">
+            <div><label for="holidayFrom">Dari tanggal</label><input type="date" id="holidayFrom" required></div>
+            <div><label for="holidayTo">Sampai tanggal <span class="muted">(opsional)</span></label><input type="date" id="holidayTo"></div>
+            <div class="grow"><label for="holidayNote">Keterangan</label><input id="holidayNote" maxlength="100" placeholder="Contoh: Libur Natal"></div>
+            <button class="btn btn-primary" id="holidayBtn">Tambah Libur</button>
+          </form>
+          <div class="holiday-items" id="holidayItems"></div>
+          <div class="queue-toolbar weekly-head"><div><h2>Libur Rutin Mingguan</h2><p>Berlaku otomatis setiap pekan, misalnya setiap hari Jumat.</p></div></div>
+          <form id="weeklyForm" class="holiday-form">
+            <div><label for="weeklyDay">Setiap hari</label><select id="weeklyDay"><option value="1">Senin</option><option value="2">Selasa</option><option value="3">Rabu</option><option value="4">Kamis</option><option value="5" selected>Jumat</option><option value="6">Sabtu</option><option value="0">Minggu</option></select></div>
+            <div class="grow"><label for="weeklyNote">Keterangan <span class="muted">(opsional)</span></label><input id="weeklyNote" maxlength="100" placeholder="Contoh: Libur hari Jumat"></div>
+            <button class="btn btn-primary" id="weeklyBtn">Tambah Libur Rutin</button>
+          </form>
+          <div class="holiday-items" id="weeklyItems"></div>
+        </section>
       </div>
     </section>
   </main>
