@@ -231,3 +231,13 @@ input[type=date]::-webkit-date-and-time-value{text-align:left;min-height:1.2em}
   .modal-actions .btn{flex:1;padding:13px 8px;gap:0}
   .modal-actions .btn-danger{margin-right:0}
 }
+
+/* ===== Dialog konfirmasi (pengganti dialog bawaan browser) ===== */
+#confirmModal{z-index:30}
+.confirm-card{width:min(100%,400px);padding:24px 24px 0}
+.confirm-card h2{font:750 20px Manrope;color:var(--navy);margin:0 0 10px}
+.confirm-card p{margin:0;color:#4b6070;line-height:1.65;font-size:14px}
+.confirm-card .modal-actions{position:static;margin:22px -24px 0;padding:14px 24px 20px;border-top:1px solid var(--line);justify-content:flex-end;background:#fff}
+.confirm-card .modal-actions .btn{flex:1;max-width:190px;padding:13px 12px}
+.confirm-card .modal-actions .btn-danger{margin-right:0}
+@media(max-width:600px){.confirm-card{padding:20px 20px 0}.confirm-card .modal-actions{margin:20px -20px 0;padding:14px 20px 18px}}
