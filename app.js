@@ -54,34 +54,32 @@ function notify(message) {
 }
 
 function api(params) {
-  return new Promise((resolve, reject) => {
-    if (!API_URL || API_URL.includes('TEMPEL_URL')) return reject(new Error('URL Web App belum diatur pada app.js.'));
-    const callback = 'antrianCallback' + Date.now() + Math.floor(Math.random() * 1000);
-    const script = document.createElement('script');
-    const query = new URLSearchParams({ ...params, callback });
-    let timer;
-    function cleanup() {
-      delete window[callback];
-      script.remove();
-      clearTimeout(timer);
-    }
-    window[callback] = (data) => {
-      cleanup();
-      data && data.ok ? resolve(data) : reject(new Error((data && data.message) || 'Permintaan gagal.'));
-    };
-    script.onerror = () => {
-      cleanup();
-      reject(new Error('Tidak dapat terhubung ke server. Periksa URL dan deployment Apps Script.'));
-    };
-    timer = setTimeout(() => {
-      cleanup();
-      reject(new Error('Server tidak merespons. Coba lagi.'));
-    }, 15000);
-    script.src = API_URL + (API_URL.includes('?') ? '&' : '?') + query.toString();
-    document.body.appendChild(script);
-  });
+  if (!API_URL || API_URL.includes('TEMPEL_URL')) {
+    return Promise.reject(new Error('URL Web App belum diatur pada app.js.'));
+  }
+  const query = new URLSearchParams(params).toString();
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15000);
+  return fetch(API_URL + (API_URL.includes('?') ? '&' : '?') + query, {
+    method: 'GET',
+    credentials: 'omit', // jangan kirim cookie akun Google
+    redirect: 'follow',
+    signal: ctrl.signal
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.ok) return data;
+      throw new Error((data && data.message) || 'Permintaan gagal.');
+    })
+    .catch(err => {
+      if (err.name === 'AbortError') throw new Error('Server tidak merespons. Coba lagi.');
+      if (err instanceof TypeError || err instanceof SyntaxError) {
+        throw new Error('Tidak dapat terhubung ke server. Periksa URL dan deployment Apps Script.');
+      }
+      throw err;
+    })
+    .finally(() => clearTimeout(timer));
 }
-
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
