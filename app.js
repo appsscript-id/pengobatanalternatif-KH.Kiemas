@@ -660,9 +660,16 @@ function openModal(item) {
   $('deleteQueue').classList.toggle('hidden', !item);
   $('queueModal').classList.remove('hidden');
   setPageLock(true);
-  $('editName').focus();
+  // Tidak fokus otomatis, supaya keyboard HP tidak langsung terbuka saat menekan Edit.
+  $('queueModal').querySelector('.modal-card').scrollTop = 0;
 }
 function closeModal() { $('queueModal').classList.add('hidden'); setPageLock(false); }
+// Saat kolom diketuk dan keyboard muncul, geser layar agar kolom tetap terlihat.
+$('queueForm').addEventListener('focusin', e => {
+  const el = e.target;
+  if (!el.matches('input,textarea')) return;
+  setTimeout(() => { try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (err) {} }, 300);
+});
 $('deleteQueue').onclick = async () => {
   const item = queueItems.find(x => x.id === $('editId').value);
   if (!item || busy) return;
