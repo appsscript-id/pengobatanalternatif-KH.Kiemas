@@ -117,24 +117,26 @@ select{border:1px solid #dce5eb;border-radius:9px;padding:13px 14px;color:var(--
   #takeBtn{margin-top:10px}
   #patientView .info-strip{padding-top:12px}
 }
-/* ===== Isi penuh tinggi layar (komputer) ===== */
+/* ===== Isi penuh tinggi layar, tanpa scroll (komputer) ===== */
 @media (min-width:801px) and (min-height:801px){
   body{display:flex;flex-direction:column;min-height:100vh}
-  main{flex:1;width:100%;display:flex;flex-direction:column}
+  .topbar{height:66px}
+  main{flex:1;width:100%;display:flex;flex-direction:column;padding:14px 24px 6px}
+  footer{padding-top:14px;padding-bottom:14px}
   #patientView{flex:1;flex-direction:column}
   #patientView:not(.hidden){display:flex}
-  #patientView .hero{flex:1;align-content:center;padding-bottom:clamp(16px,3vh,32px)}
-  #patientView .hero h1{font-size:clamp(34px,5vh,54px)}
-  #patientView .hero-copy>p{font-size:clamp(15px,1.9vh,17px)}
-  #patientView .hero-meta{display:flex;margin-top:clamp(18px,3vh,30px)}
+  #patientView .hero{flex:1;align-content:center;padding-bottom:clamp(10px,2vh,22px)}
+  #patientView .hero h1{font-size:clamp(32px,4.4vh,50px)}
+  #patientView .hero-copy>p{font-size:clamp(14px,1.8vh,16px)}
+  #patientView .hero-meta{display:flex;margin-top:clamp(14px,2.4vh,26px)}
 
-  #patientView .form-card{padding:clamp(20px,3vh,34px) 28px clamp(16px,2.4vh,26px)}
-  #patientView .card-heading{margin-bottom:clamp(6px,1.2vh,14px)}
-  #patientView .card-heading h2{font-size:clamp(20px,2.6vh,25px)}
-  #takeForm label{margin:clamp(9px,1.5vh,18px) 0 clamp(5px,.8vh,8px)}
-  #takeForm input,#takeForm textarea{padding:clamp(9px,1.4vh,15px) 13px}
-  #takeForm textarea{height:clamp(54px,7.5vh,84px)}
-  #takeBtn{margin-top:clamp(14px,2.4vh,24px);padding:clamp(12px,1.8vh,17px)}
-  #patientView .lookup{margin-top:clamp(10px,1.8vh,18px);padding-top:clamp(8px,1.4vh,14px)}
-  #patientView .info-strip{padding-top:clamp(16px,2.6vh,30px);margin-bottom:clamp(8px,2vh,24px)}
+  #patientView .form-card{padding:clamp(16px,2.4vh,28px) 26px clamp(12px,1.8vh,20px)}
+  #patientView .card-heading{margin-bottom:clamp(4px,1vh,10px)}
+  #patientView .card-heading h2{font-size:clamp(19px,2.4vh,23px)}
+  #takeForm label{margin:clamp(7px,1.2vh,15px) 0 clamp(4px,.7vh,7px)}
+  #takeForm input,#takeForm textarea{padding:clamp(8px,1.2vh,13px) 13px}
+  #takeForm textarea{height:clamp(46px,6.2vh,74px)}
+  #takeBtn{margin-top:clamp(10px,1.8vh,20px);padding:clamp(11px,1.5vh,15px)}
+  #patientView .lookup{margin-top:clamp(8px,1.4vh,14px);padding-top:clamp(6px,1vh,12px)}
+  #patientView .info-strip{padding-top:clamp(12px,2vh,24px);margin-bottom:clamp(4px,1vh,12px)}
 }
