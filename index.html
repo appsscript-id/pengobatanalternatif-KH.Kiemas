@@ -21,7 +21,7 @@
 
   <main>
     <section id="patientView" class="view">
-      <div class="hero">
+      <div class="hero" id="patientHero">
         <div class="hero-copy">
           <span class="eyebrow">LAYANAN ANTRIAN DIGITAL</span>
           <h1>Selamat datang di<br><em>KH. Kiemas</em></h1>
@@ -42,11 +42,23 @@
           </form>
         </div>
       </div>
-      <section class="result-panel hidden" id="ticketResult" aria-live="polite">
-        <div class="success-icon">✓</div><div><span class="eyebrow">NOMOR ANTRIAN ANDA</span><h2 id="ticketNumber">A001</h2><p id="ticketName"></p><span class="status-pill waiting">Menunggu</span></div>
-        <div class="ticket-actions"><button class="btn btn-outline" id="printTicket">Cetak bukti</button><button class="btn btn-dark" id="newTicket">Selesai</button></div>
+      <section class="proof hidden" id="ticketResult" aria-live="polite">
+        <div class="proof-title"><span class="success-icon">✓</span>Pendaftaran berhasil</div>
+        <div class="ticket" id="ticketCard">
+          <div class="ticket-head"><span class="ticket-brand"><b>KH. KIEMAS</b><small>PENGOBATAN ALTERNATIF</small></span><span class="ticket-badge">Bukti Pendaftaran</span></div>
+          <div class="ticket-main"><span class="eyebrow">NOMOR ANTRIAN</span><h2 id="ticketNumber">A001</h2></div>
+          <div class="ticket-cut"><span></span></div>
+          <dl class="ticket-info">
+            <div class="wide"><dt>Nama pasien</dt><dd id="ticketName"></dd></div>
+            <div class="wide"><dt>Tanggal kunjungan</dt><dd id="ticketDate"></dd></div>
+            <div><dt>Umur</dt><dd id="ticketAge"></dd></div>
+            <div><dt>Didaftarkan</dt><dd id="ticketIssued"></dd></div>
+          </dl>
+          <p class="ticket-note">Tunjukkan bukti ini kepada petugas untuk menerima kartu antrian fisik dengan nomor yang sama.</p>
+        </div>
+        <div class="proof-actions"><button class="btn btn-primary" id="saveTicket">Simpan Gambar</button><button class="btn btn-outline" id="printTicket">Cetak</button><button class="btn btn-dark" id="newTicket">Daftar Baru</button></div>
       </section>
-      <section class="info-strip"><div><span class="info-icon">01</span><p><b>Isi data pasien</b><small>Masukkan identitas dan kontak.</small></p></div><div><span class="info-icon">02</span><p><b>Simpan nomor</b><small>Catat nomor antrian Anda.</small></p></div><div><span class="info-icon">03</span><p><b>Tunggu panggilan</b><small>Admin akan memanggil sesuai urutan.</small></p></div></section>
+      <section class="info-strip"><div><span class="info-icon">01</span><p><b>Isi data pasien</b><small>Masukkan identitas dan kontak.</small></p></div><div><span class="info-icon">02</span><p><b>Simpan bukti</b><small>Simpan gambar bukti pendaftaran.</small></p></div><div><span class="info-icon">03</span><p><b>Tukar kartu</b><small>Tunjukkan bukti ke petugas, lalu tunggu dipanggil.</small></p></div></section>
     </section>
 
     <section id="adminView" class="view hidden">
@@ -62,7 +74,8 @@
           <div class="stat-card"><span>Selesai</span><b id="statDone">0</b><small>Sudah dilayani</small></div>
         </div>
         <div class="queue-toolbar"><div><h2>Denah Antrian</h2><p>Pilih kartu pasien untuk mengelola status antrian.</p></div><button class="btn btn-primary" id="addQueueBtn">＋ Tambah Antrian</button></div>
-        <div class="legend"><span><i class="dot dot-wait"></i> Menunggu</span><span><i class="dot dot-call"></i> Dipanggil</span><span><i class="dot dot-done"></i> Selesai</span><span><i class="dot dot-cancel"></i> Batal</span></div>
+        <div class="legend"><span><i class="dot dot-wait"></i> Menunggu</span><span><i class="dot dot-call"></i> Dipanggil</span><span><i class="dot dot-done"></i> Selesai</span><span><i class="dot dot-cancel"></i> Batal</span><span><i class="dot dot-card"></i> Kartu fisik sudah diambil</span></div>
+        <div class="queue-search"><input id="queueSearch" type="search" placeholder="Cari nomor atau nama · Enter = kartu diambil" autocomplete="off"></div>
         <div class="screen-label"><span></span><b>DAFTAR ANTRIAN PASIEN</b><span></span></div>
         <div class="seat-grid" id="queueGrid"><div class="empty-state">Belum ada data antrian.</div></div>
         <div class="admin-bottom"><span id="queueCount">0 pasien terdaftar</span><button class="text-danger" id="resetDayBtn">Kosongkan antrian tanggal ini</button></div>
