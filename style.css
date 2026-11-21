@@ -109,11 +109,10 @@ select{border:1px solid #dce5eb;border-radius:9px;padding:13px 14px;color:var(--
   #takeForm label[for=visitDate]{grid-column:2;grid-row:5}
   #visitDate{grid-column:2;grid-row:6}
   #visitDateHint{grid-column:1/-1;grid-row:7}
-  #holidayList{grid-column:1/-1;grid-row:8}
-  #takeForm label[for=patientNote]{grid-column:1/-1;grid-row:9}
-  #patientNote{grid-column:1/-1;grid-row:10}
-  #takeBtn{grid-column:1/-1;grid-row:11;margin-top:clamp(12px,2.2vh,24px);padding:clamp(12px,1.8vh,17px)}
-  #takeForm .form-foot{grid-column:1/-1;grid-row:12;margin:8px 0 0}
+  #takeForm label[for=patientNote]{grid-column:1/-1;grid-row:8}
+  #patientNote{grid-column:1/-1;grid-row:9}
+  #takeBtn{grid-column:1/-1;grid-row:10;margin-top:clamp(12px,2.2vh,24px);padding:clamp(12px,1.8vh,17px)}
+  #takeForm .form-foot{grid-column:1/-1;grid-row:11;margin:8px 0 0}
   #patientView .lookup{margin-top:clamp(10px,1.8vh,18px);padding-top:clamp(8px,1.4vh,14px)}
 }
 
