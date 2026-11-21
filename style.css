@@ -62,24 +62,3 @@ select{border:1px solid #dce5eb;border-radius:9px;padding:13px 14px;color:var(--
 .view-link{display:inline-block;margin-left:6px;padding:3px 10px;border-radius:20px;background:#eaf3f6;color:var(--blue);font-size:12px;font-weight:700;text-decoration:none}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-4px)}}
 .modal-card.shake{animation:shake .3s}
-
-/* ===== Bukti pendaftaran: navy & emas, elegan ===== */
-.ticket{border:0;border-radius:22px;box-shadow:0 26px 60px #102a4326,0 2px 8px #102a430f}
-.ticket-head{background:linear-gradient(135deg,#0c2034 0%,#17395c 100%);padding:20px 24px;border-bottom:3px solid #c8a96a}
-.ticket-id{display:flex;align-items:center;gap:12px}
-.ticket-mark{width:38px;height:38px;border-radius:50%;border:1.5px solid #c8a96a;color:#e3cc96;display:grid;place-items:center;font:800 17px Manrope;font-style:normal}
-.ticket-badge{background:transparent;border:1px solid #c8a96aa8;color:#ecdcb0;letter-spacing:.1em;text-transform:uppercase;font-size:9px;padding:6px 11px}
-.ticket-main{padding:34px 24px 28px;background:radial-gradient(120% 90% at 50% 0%,#f3f8f9 0%,#fff 70%)}
-.ticket-main .eyebrow{display:flex;align-items:center;justify-content:center;gap:12px;color:var(--teal);letter-spacing:.2em}
-.ticket-main .eyebrow::before,.ticket-main .eyebrow::after{content:'';width:28px;height:1px;background:#c8a96a}
-.ticket-main h2{font-size:76px;letter-spacing:.05em;margin:14px 0 0;padding-left:.05em}
-.ticket-orn{display:block;width:46px;height:3px;border-radius:3px;background:#c8a96a;margin:16px auto 0}
-.ticket-info{padding:26px 28px 4px;gap:0 22px}
-.ticket-info>div{padding:12px 0;border-bottom:1px solid #eef2f5}
-.ticket-info>div:nth-last-child(-n+2){border-bottom:0}
-.ticket-info dt{color:#8d9ba7;letter-spacing:.13em}
-.ticket-info dd{font-size:16px}
-.ticket-note{margin:14px 28px 0;background:#f2f8f7;border:1px solid #dcebe8;color:#2b6f69;padding:14px 16px}
-.ticket-foot{margin:0;padding:18px 0 24px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.24em;color:#9c7d3f}
-@media(max-width:480px){.ticket-main h2{font-size:64px}.ticket-info{padding:22px 22px 4px}.ticket-note{margin:12px 22px 0}.ticket-head{padding:16px 18px}}
-@media print{.ticket-head{background:#102a43!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
