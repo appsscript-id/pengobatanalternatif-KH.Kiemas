@@ -1,5 +1,5 @@
 // Isi dengan URL Web App Google Apps Script setelah deployment.
-const API_URL = 'TEMPEL_URL_WEB_APP_APPS_SCRIPT_DI_SINI';
+const API_URL = 'https://script.google.com/macros/s/AKfycbw9onG0TnP78rEaay7PyqcRqiXniZmVh_hobrHmReSx3lfIF4bk_sOwoOLyqqg5MOAB/exec';
 const MAX_DAYS_AHEAD = 60; // samakan dengan CONFIG.MAX_DAYS_AHEAD di Code.gs
 
 let adminPin = '';
