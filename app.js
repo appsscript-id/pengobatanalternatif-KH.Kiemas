@@ -406,8 +406,8 @@ function renderGrid() {
       <div class="seat-phone seat-addr" title="${esc(item.address)}">${esc(item.address)}</div>
       ${pill}
       <div class="seat-actions">
-        ${open && !item.cardTaken ? btn('card', 'Kartu diambil', 'card') : ''}
-        ${open && item.cardTaken ? btn('uncard', 'Batalkan kartu') : ''}
+        ${open && !item.cardTaken ? btn('card', 'Kartu diambil', 'card wide') : ''}
+        ${open && item.cardTaken ? btn('uncard', 'Batalkan kartu', 'wide') : ''}
         ${open ? btn('cancel', 'Batal') : btn('reopen', 'Buka lagi')}
         ${btn('edit', 'Edit')}
         ${btn('delete', 'Hapus', 'danger')}
