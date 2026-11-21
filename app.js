@@ -153,13 +153,13 @@ $('takeForm').addEventListener('submit', async e => {
     });
     const t = {
       number: data.item.number, name: data.item.name, age: data.item.age, date: data.item.date,
-      issued: new Date().toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+      issued: data.duplicate && data.item.created ? fmtIssued(data.item.created) : new Date().toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     };
     try { localStorage.setItem(STORE_KEY, JSON.stringify(t)); } catch (err) {}
     $('takeForm').reset();
     resetVisitDate();
     showTicket(t);
-    notify('Pendaftaran berhasil. Simpan bukti Anda.');
+    notify(data.duplicate ? 'Anda sudah terdaftar pada tanggal ini. Berikut nomor Anda.' : 'Pendaftaran berhasil. Simpan bukti Anda.');
   } catch (err) {
     notify(err.message);
   } finally {
