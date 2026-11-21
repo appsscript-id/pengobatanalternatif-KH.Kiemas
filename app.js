@@ -716,7 +716,6 @@ $('weeklyItems').addEventListener('click', async e => {
 });
 loadHolidays();
 /* Tetap masuk setelah halaman di-refresh */
-/* Tetap masuk setelah halaman di-refresh */
 (async function restoreAdmin() {
   let pin = '', view = '';
   try { pin = sessionStorage.getItem(PIN_KEY) || ''; view = sessionStorage.getItem(VIEW_KEY) || ''; } catch (e) {}
