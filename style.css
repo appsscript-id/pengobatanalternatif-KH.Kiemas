@@ -146,3 +146,68 @@ input[type=date]::-webkit-date-and-time-value{text-align:left;min-height:1.2em}
 
   .holiday-item{padding:12px 14px}
 }
+/* ----- Petunjuk kuota / tanggal ----- */
+.date-hint.ok{color:#25704b}
+ 
+/* ----- Ubah tanggal / batalkan antrian (halaman pasien) ----- */
+.proof-manage{display:flex;justify-content:center;gap:22px;margin-top:14px;flex-wrap:wrap}
+.link-btn.danger{color:#b03a3a}
+.move-panel{margin-top:14px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:6px 20px 20px;box-shadow:var(--shadow)}
+.move-panel input[type=date]{width:100%;min-height:48px}
+.move-actions{display:flex;gap:8px;margin-top:16px}
+.move-actions .btn{flex:1;padding:13px 10px}
+.move-panel .form-foot{margin-top:12px}
+ 
+/* ----- Toolbar denah antrian: tombol cetak ----- */
+.toolbar-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+#quotaInput{width:180px}
+.quota-panel{margin-top:30px}
+@media(max-width:600px){
+  .queue-toolbar{flex-direction:column;align-items:stretch}
+  .toolbar-actions{justify-content:stretch}
+  .toolbar-actions .btn{flex:1;padding:11px 8px;font-size:12px}
+  .toolbar-actions #addQueueBtn{flex-basis:100%}
+  #quotaInput{width:100%}
+}
+ 
+/* ----- Area cetak: tersembunyi di layar ----- */
+#printArea{display:none}
+ 
+@media print{
+  @page{margin:10mm}
+ 
+  /* Saat mencetak daftar / kartu: sembunyikan seluruh aplikasi, tampilkan hanya area cetak */
+  body.print-list main,body.print-cards main,
+  body.print-list .topbar,body.print-cards .topbar,
+  body.print-list footer,body.print-cards footer,
+  body.print-list .toast,body.print-cards .toast{display:none!important}
+  body.print-list #printArea,body.print-cards #printArea{display:block!important}
+  body.print-list,body.print-cards{background:#fff;color:#000;display:block;min-height:0}
+ 
+  /* Daftar antrian harian */
+  .pl-head{margin-bottom:10px;border-bottom:2px solid #102a43;padding-bottom:8px}
+  .pl-head h1{font:800 18pt Manrope,sans-serif;margin:0 0 3px;color:#102a43}
+  .pl-head p{margin:0;font-size:10pt;color:#333}
+  .pl-table{width:100%;border-collapse:collapse;font-size:9.5pt}
+  .pl-table th{background:#eaf0f4!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;text-align:left;font-size:8.5pt;text-transform:uppercase;letter-spacing:.04em}
+  .pl-table th,.pl-table td{border:1px solid #9aa7b0;padding:5px 7px;vertical-align:top}
+  .pl-table td.c,.pl-table th:nth-child(1),.pl-table th:nth-child(3),.pl-table th:nth-child(6){text-align:center}
+  .pl-table tr{break-inside:avoid}
+  .pl-table tr.cx td{color:#777;text-decoration:line-through}
+  .pl-table tr.cx em{text-decoration:none;font-style:normal;font-weight:700}
+  .pl-foot{margin-top:10px;font-size:9pt;color:#444}
+ 
+  /* Kartu antrian fisik: 2 kolom x 5 baris per lembar A4 */
+  .pcards{display:grid;grid-template-columns:repeat(2,1fr);gap:6mm}
+  .pcard{border:1.5px dashed #777;border-radius:4mm;padding:4mm 5mm;height:50mm;display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center;break-inside:avoid;page-break-inside:avoid}
+  .pc-head{width:100%;display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #cfd8de;padding-bottom:2mm}
+  .pc-head b{font:800 10pt Manrope,sans-serif;letter-spacing:.08em;color:#102a43}
+  .pc-head small{font-size:6.5pt;letter-spacing:.12em;color:#555}
+  .pc-label{font-size:7pt;letter-spacing:.16em;font-weight:700;color:#2b9a91}
+  .pc-num{font:800 40pt/1 Manrope,sans-serif;color:#102a43;letter-spacing:-.02em}
+  .pc-name{font-weight:700;font-size:10pt;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pc-date{font-size:8pt;color:#555}
+}
+ 
+Claude finished the response
+
