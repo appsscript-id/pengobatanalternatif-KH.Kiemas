@@ -400,7 +400,7 @@ function renderGrid() {
       : item.cardTaken ? `<span class="seat-state st-taken">✓ Diambil${time ? ' · ' + time : ''}</span>`
       : state === 'Menunggu' ? '<span class="seat-state st-wait">Belum diambil</span>'
       : `<span class="seat-state">${state}</span>`;
-    return `<article class="queue-seat ${cls}">
+    return `<article class="queue-seat ${cls}" data-id="${esc(item.id)}" tabindex="0" title="Klik untuk melihat data pasien">
       <div class="seat-top"><span class="seat-number">${esc(item.number)}</span>${badge}</div>
       <div class="seat-name" title="${esc(item.name)}">${esc(item.name)}</div>
       <div class="seat-phone">${esc(item.age)} tahun · ${esc(item.phone)}</div>
@@ -426,7 +426,13 @@ const ACTION_MESSAGES = {
 
 $('queueGrid').addEventListener('click', async e => {
   const b = e.target.closest('[data-action]');
-  if (!b || busy) return;
+  if (!b) {
+    const seat = e.target.closest('.queue-seat');
+    const it = seat && queueItems.find(x => x.id === seat.dataset.id);
+    if (it) openView(it);
+    return;
+  }
+  if (busy) return;
   const item = queueItems.find(x => x.id === b.dataset.id);
   if (!item) return;
   const action = b.dataset.action;
@@ -447,6 +453,12 @@ $('queueGrid').addEventListener('click', async e => {
   } finally {
     busy = false;
   }
+});
+
+$('queueGrid').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || !e.target.classList.contains('queue-seat')) return;
+  const it = queueItems.find(x => x.id === e.target.dataset.id);
+  if (it) openView(it);
 });
 
 /* Pencarian cepat: ketik nomor kartu lalu Enter untuk menandai kartu sudah diambil */
@@ -473,6 +485,44 @@ $('queueSearch').addEventListener('keydown', async e => {
 });
 
 /* ---------- Admin: modal tambah/edit ---------- */
+function setPageLock(on) {
+  ['main', '.topbar', 'footer'].forEach(sel => { const el = document.querySelector(sel); if (el) el.inert = on; });
+  document.body.style.overflow = on ? 'hidden' : '';
+}
+
+/* ---------- Admin: preview data pasien ---------- */
+function openView(item) {
+  const phoneDigits = String(item.phone || '').replace(/[^\d+]/g, '');
+  const wa = phoneDigits.replace(/^\+/, '').replace(/^0/, '62');
+  const time = item.cardAt ? new Date(item.cardAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '';
+  const status = item.status === 'Batal' ? 'Dibatalkan' : (item.cardTaken ? 'Kartu sudah diambil' + (time ? ' · ' + time : '') : 'Kartu belum diambil');
+  const tone = item.status === 'Batal' ? 'bad' : (item.cardTaken ? 'ok' : 'wait');
+  const row = (k, v, wide) => `<div class="${wide ? 'wide' : ''}"><dt>${k}</dt><dd>${v}</dd></div>`;
+  $('viewNumber').textContent = item.number;
+  $('viewStatus').className = 'view-status ' + tone;
+  $('viewStatus').textContent = status;
+  $('viewBody').innerHTML =
+    row('Nama pasien', esc(item.name), true) +
+    row('Umur', esc(item.age) + ' tahun') +
+    row('Tanggal kunjungan', esc(item.date ? fmtDate(item.date) : '-')) +
+    row('Telepon / WhatsApp', esc(item.phone) + (phoneDigits ? ` <a class="view-link" href="tel:${esc(phoneDigits)}">Telepon</a> <a class="view-link" href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>` : ''), true) +
+    row('Alamat', esc(item.address || '-'), true) +
+    row('Catatan', item.note ? esc(item.note) : '<span class="muted">Tidak ada catatan</span>', true) +
+    row('Didaftarkan', esc(fmtIssued(item.created)), true);
+  $('viewEdit').dataset.id = item.id;
+  $('viewModal').classList.remove('hidden');
+  setPageLock(true);
+}
+function closeView() { $('viewModal').classList.add('hidden'); setPageLock(false); }
+$('closeView').onclick = closeView;
+$('viewClose').onclick = closeView;
+$('viewModal').addEventListener('click', e => { if (e.target === $('viewModal')) closeView(); });
+$('viewEdit').onclick = () => {
+  const it = queueItems.find(x => x.id === $('viewEdit').dataset.id);
+  closeView();
+  if (it) openModal(it);
+};
+
 function openModal(item) {
   $('modalTitle').textContent = item ? 'Edit Antrian' : 'Tambah Antrian';
   $('editId').value = item?.id || '';
@@ -484,9 +534,10 @@ function openModal(item) {
   $('editNote').value = item?.note || '';
   $('deleteQueue').classList.toggle('hidden', !item);
   $('queueModal').classList.remove('hidden');
+  setPageLock(true);
   $('editName').focus();
 }
-function closeModal() { $('queueModal').classList.add('hidden'); }
+function closeModal() { $('queueModal').classList.add('hidden'); setPageLock(false); }
 $('deleteQueue').onclick = async () => {
   const item = queueItems.find(x => x.id === $('editId').value);
   if (!item || busy) return;
@@ -506,8 +557,17 @@ $('deleteQueue').onclick = async () => {
 $('addQueueBtn').onclick = () => openModal(null);
 $('closeModal').onclick = closeModal;
 $('cancelModal').onclick = closeModal;
-$('queueModal').addEventListener('click', e => { if (e.target === $('queueModal')) closeModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('queueModal').classList.contains('hidden')) closeModal(); });
+// Dialog edit bersifat modal: klik di luar kotak tidak menutupnya (hanya memberi isyarat), harus lewat Batal / ×.
+$('queueModal').addEventListener('click', e => {
+  if (e.target !== $('queueModal')) return;
+  const card = $('queueModal').querySelector('.modal-card');
+  card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (!$('queueModal').classList.contains('hidden')) closeModal();
+  else if (!$('viewModal').classList.contains('hidden')) closeView();
+});
 
 $('queueForm').onsubmit = async e => {
   e.preventDefault();
