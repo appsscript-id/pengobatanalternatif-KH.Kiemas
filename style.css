@@ -156,8 +156,8 @@ input[type=date]::-webkit-date-and-time-value{text-align:left;min-height:1.2em}
 .date-hint.ok{color:#25704b}
 
 /* ----- Ubah tanggal / batalkan antrian (halaman pasien) ----- */
-.proof-manage{display:flex;justify-content:center;gap:22px;margin-top:14px;flex-wrap:wrap}
-.link-btn.danger{color:#b03a3a}
+.proof-manage{display:flex;gap:8px;margin-top:8px}
+.proof-manage .btn{flex:1;padding:13px 10px}
 .move-panel{margin-top:14px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:6px 20px 20px;box-shadow:var(--shadow)}
 .move-panel input[type=date]{width:100%;min-height:48px}
 .move-actions{display:flex;gap:8px;margin-top:16px}
