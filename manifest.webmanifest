@@ -1,0 +1,12 @@
+{
+  "name": "Antrian Pengobatan Alternatif KH. Kiemas",
+  "short_name": "Antrian KH Kiemas",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f5f8fa",
+  "theme_color": "#102a43",
+  "description": "Sistem nomor antrian Pengobatan Alternatif KH. Kiemas",
+  "icons": [
+    {"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}
