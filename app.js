@@ -37,12 +37,10 @@ function firstOpenDate() {
 }
 function checkVisitDate() {
   const d = $('visitDate').value, h = holidayOf(d), full = isFull(d), hint = $('visitDateHint');
-  let msg = '', ok = false;
+  let msg = '';
   if (h) msg = 'Libur' + (h.note ? ' — ' + h.note : '') + '. Silakan pilih tanggal lain.';
   else if (full) msg = 'Kuota tanggal ini sudah penuh. Silakan pilih tanggal lain.';
-  else if (d && quota > 0) { msg = 'Sisa kuota: ' + Math.max(quota - (counts[d] || 0), 0) + ' pasien'; ok = true; }
   hint.textContent = msg;
-  hint.classList.toggle('ok', ok);
   $('takeBtn').disabled = !!h || full;
 }
 function resetVisitDate() {
@@ -756,18 +754,8 @@ $('quotaForm').addEventListener('submit', async e => {
 });
 
 /* ---------- Hari libur ---------- */
-const shortDate = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }); };
-
 function renderHolidayUI() {
   // Halaman pasien
-  const list = $('holidayList');
-  const parts = [];
-  if (weeklyHolidays.length) parts.push('Libur rutin: setiap ' + weeklyHolidays.map(w => DAY_NAMES[w.day]).join(', '));
-  if (holidays.length) parts.push('Tanggal libur: ' + holidays.slice(0, 6).map(h => shortDate(h.date) + (h.note ? ' (' + h.note + ')' : '')).join(' · ') + (holidays.length > 6 ? ' …' : ''));
-  if (parts.length) {
-    list.textContent = parts.join(' | ');
-    list.classList.remove('hidden');
-  } else list.classList.add('hidden');
   if (holidayOf($('visitDate').value) || isFull($('visitDate').value)) $('visitDate').value = firstOpenDate();
   checkVisitDate();
   if (!$('movePanel').classList.contains('hidden')) checkMoveDate();
