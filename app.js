@@ -588,6 +588,7 @@ $('queueGrid').addEventListener('click', async e => {
   const item = queueItems.find(x => x.id === b.dataset.id);
   if (!item) return;
   const action = b.dataset.action;
+  if (item.pending) { notify('Tunggu sebentar, data sedang disimpan.'); return; }
   if (action === 'edit') { openModal(item); return; }
   if (action === 'card' || action === 'uncard') { setCardOptimistic(item, action === 'card'); return; }
   if (action === 'cancel' || action === 'reopen') { setStatusOptimistic(item, action); return; }
@@ -728,19 +729,42 @@ $('queueForm').addEventListener('focusin', e => {
 $('deleteQueue').onclick = async () => {
   const item = queueItems.find(x => x.id === $('editId').value);
   if (!item || busy) return;
+  if (item.pending) { notify('Tunggu sebentar, data sedang disimpan.'); return; }
   if (!(await askConfirm('Hapus antrian ' + item.number + ' atas nama ' + item.name + '? Data tidak dapat dikembalikan.', 'Ya, hapus', 'Hapus antrian'))) return;
-  busy = true;
-  try {
-    await api({ action: 'delete', pin: adminPin, id: item.id });
-    closeModal();
-    await loadQueues();
-    notify('Antrian dihapus.');
-  } catch (err) {
-    handleError(err);
-  } finally {
-    busy = false;
-  }
+  closeModal();
+  deleteOptimistic(item);
 };
+
+/* Hapus antrian secara optimistis: kartu langsung hilang, server menyusul. Gagal = kartu kembali. */
+function deleteOptimistic(item) {
+  const idx = queueItems.indexOf(item);
+  if (idx < 0) return;
+  queueItems.splice(idx, 1);
+  renderStats();
+  renderGrid();
+  notify('Antrian dihapus.');
+  return api({ action: 'delete', pin: adminPin, id: item.id }).catch(err => {
+    queueItems.push(item);
+    sortItems();
+    renderStats();
+    renderGrid();
+    handleError(err);
+  });
+}
+function sortItems() {
+  queueItems.sort((a, b) => (numOf(a.number) - numOf(b.number)) || a.number.localeCompare(b.number));
+}
+// Buka kembali dialog dengan isian terakhir pengguna (dipakai bila penyimpanan ditolak server).
+function reopenWithFields(item, f) {
+  if (!adminPin) return;
+  openModal(item);
+  $('editName').value = f.name;
+  $('editAge').value = f.age;
+  $('editAddress').value = f.address;
+  $('editPhone').value = f.phone;
+  $('editVisitDate').value = f.visitDate;
+  $('editNote').value = f.note;
+}
 $('addQueueBtn').onclick = () => openModal(null);
 $('closeModal').onclick = closeModal;
 $('cancelModal').onclick = closeModal;
@@ -756,12 +780,12 @@ document.addEventListener('keydown', e => {
   else if (!$('viewModal').classList.contains('hidden')) closeView();
 });
 
-$('queueForm').onsubmit = async e => {
+/* Simpan data secara optimistis: dialog langsung tertutup dan kartu langsung diperbarui,
+   server menyusul di latar belakang. Bila ditolak server, perubahan dibatalkan dan dialog dibuka lagi. */
+$('queueForm').onsubmit = e => {
   e.preventDefault();
   const id = $('editId').value;
-  const btn = $('saveQueue');
-  btn.disabled = true;
-  const fields = {
+  const f = {
     name: $('editName').value.trim(),
     age: $('editAge').value.trim(),
     address: $('editAddress').value.trim(),
@@ -769,19 +793,73 @@ $('queueForm').onsubmit = async e => {
     visitDate: $('editVisitDate').value,
     note: $('editNote').value.trim()
   };
-  try {
-    await api(id
-      ? { action: 'update', pin: adminPin, id, ...fields }
-      : { action: 'take', pin: adminPin, ...fields });
-    closeModal();
-    await loadQueues();
-    notify(id ? 'Data berhasil diedit.' : 'Antrian berhasil ditambahkan.');
-  } catch (err) {
-    handleError(err);
-  } finally {
-    btn.disabled = false;
-  }
+  // Pemeriksaan dasar di perangkat (sama dengan aturan server) supaya kesalahan umum langsung terlihat.
+  if (f.name.length < 2) return notify('Nama pasien minimal 2 karakter.');
+  if (!/^\d{1,3}$/.test(f.age) || Number(f.age) > 120) return notify('Umur wajib diisi dengan angka 0 sampai 120.');
+  if (!f.address) return notify('Alamat wajib diisi.');
+  if (!/^[0-9+\- ()]{8,20}$/.test(f.phone)) return notify('Nomor telepon tidak valid. Contoh: 081234567890.');
+  if (!f.visitDate) return notify('Tanggal kunjungan wajib diisi.');
+  if (id) saveEditOptimistic(id, f); else saveAddOptimistic(f);
 };
+
+function saveEditOptimistic(id, f) {
+  const item = queueItems.find(x => x.id === id);
+  if (!item) return;
+  if (item.pending) { notify('Tunggu sebentar, data sedang disimpan.'); return; }
+  const prev = { ...item };
+  const moved = f.visitDate !== item.date; // pindah tanggal: nomor baru dibuat server, kartu hilang dari tanggal ini
+  closeModal();
+  if (moved) queueItems.splice(queueItems.indexOf(item), 1);
+  else Object.assign(item, { name: f.name, age: f.age, address: f.address, phone: f.phone, note: f.note });
+  renderStats();
+  renderGrid();
+  notify(moved ? 'Data disimpan. Antrian dipindah ke ' + fmtDate(f.visitDate) + '.' : 'Data berhasil diedit.');
+  api({ action: 'update', pin: adminPin, id, ...f }).catch(err => {
+    if (!queueItems.includes(item)) queueItems.push(item);
+    Object.assign(item, prev);
+    sortItems();
+    renderStats();
+    renderGrid();
+    handleError(err);
+    reopenWithFields(item, f);
+  });
+}
+
+function saveAddOptimistic(f) {
+  closeModal();
+  const sameDay = f.visitDate === $('filterDate').value;
+  if (!sameDay) {
+    notify('Menyimpan antrian...');
+    api({ action: 'take', pin: adminPin, ...f })
+      .then(() => notify('Antrian ditambahkan pada ' + fmtDate(f.visitDate) + '.'))
+      .catch(err => { handleError(err); reopenWithFields(null, f); });
+    return;
+  }
+  // Tampilkan kartu sementara dengan nomor perkiraan; nomor & ID resmi dari server menggantikannya.
+  const maxNo = queueItems.reduce((m, i) => Math.max(m, numOf(i.number)), 0);
+  const temp = {
+    id: 'tmp-' + Date.now(), pending: true, date: f.visitDate, number: String(maxNo + 1).padStart(3, '0'),
+    name: f.name, age: f.age, address: f.address, phone: f.phone, note: f.note,
+    status: 'Menunggu', created: new Date().toISOString(), cardAt: '', cardTaken: false
+  };
+  queueItems.push(temp);
+  sortItems();
+  renderStats();
+  renderGrid();
+  notify('Antrian berhasil ditambahkan.');
+  api({ action: 'take', pin: adminPin, ...f }).then(r => {
+    Object.assign(temp, { id: r.item.id, number: noOf(r.item.number), created: r.item.created || temp.created, pending: false });
+    sortItems();
+    renderGrid();
+  }).catch(err => {
+    const i = queueItems.indexOf(temp);
+    if (i >= 0) queueItems.splice(i, 1);
+    renderStats();
+    renderGrid();
+    handleError(err);
+    reopenWithFields(null, f);
+  });
+}
 
 $('resetDayBtn').onclick = async () => {
   if (busy) return;
