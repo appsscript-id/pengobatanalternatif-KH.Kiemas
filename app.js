@@ -499,8 +499,24 @@ function setCardOptimistic(item, taken) {
   });
 }
 
+/* Ubah status (Batal / Buka lagi) secara optimistis, sama seperti penandaan kartu. */
+function setStatusOptimistic(item, action) {
+  const status = action === 'cancel' ? 'Batal' : 'Menunggu';
+  const prev = item.status;
+  item.status = status;
+  renderStats();
+  renderGrid();
+  notify(ACTION_MESSAGES[action]);
+  return api({ action, pin: adminPin, id: item.id }).catch(err => {
+    item.status = prev;
+    renderStats();
+    renderGrid();
+    handleError(err);
+  });
+}
+
 let searchQuery = '';
-const normPhone = (v) => String(v || '').replace(/\D/g, '').replace(/^(62|0)/, '');
+const normPhone =(v) => String(v || '').replace(/\D/g, '').replace(/^(62|0)/, '');
 const numOf = (n) => Number(String(n).replace(/^\D+/, '')) || 0;
 
 function filteredItems() {
@@ -574,6 +590,7 @@ $('queueGrid').addEventListener('click', async e => {
   const action = b.dataset.action;
   if (action === 'edit') { openModal(item); return; }
   if (action === 'card' || action === 'uncard') { setCardOptimistic(item, action === 'card'); return; }
+  if (action === 'cancel' || action === 'reopen') { setStatusOptimistic(item, action); return; }
   if (action === 'delete' && !(await askConfirm('Hapus antrian ' + item.number + ' atas nama ' + item.name + '?', 'Ya, hapus', 'Hapus antrian'))) return;
   const request = action === 'card' ? { action: 'card', value: '1' }
     : action === 'uncard' ? { action: 'card', value: '0' }
