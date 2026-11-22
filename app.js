@@ -424,7 +424,7 @@ $('lookupResult').addEventListener('click', e => {
 /* ---------- Admin: login ---------- */
 function logout() {
   adminPin = '';
-  try { sessionStorage.removeItem(PIN_KEY); } catch (e) {}
+  try { sessionStorage.removeItem(PIN_KEY); sessionStorage.removeItem('antrianKiemasCache'); } catch (e) {}
   $('adminPin').value = '';
   searchQuery = ''; $('queueSearch').value = '';
   $('adminDashboard').classList.add('hidden');
@@ -436,38 +436,72 @@ function handleError(err) {
   if (err.message === 'PIN admin salah.') logout();
 }
 
-$('loginForm').addEventListener('submit', async e => {
+/* Dashboard langsung tampil dengan keterangan "memuat" (tanpa menunggu server);
+   data menyusul begitu siap. Bila PIN salah / gagal terhubung, kembali ke layar login. */
+function showDashboardLoading() {
+  $('adminLogin').classList.add('hidden');
+  $('adminDashboard').classList.remove('hidden');
+  ['statTotal', 'statPending', 'statTaken', 'statCancelled'].forEach(id => { $(id).textContent = '–'; });
+  $('queueCount').textContent = 'Memuat data antrian...';
+  if (!showCachedQueues()) $('queueGrid').innerHTML = '<div class="empty-state">Memuat data antrian...</div>';
+}
+function backToLogin() {
+  adminPin = '';
+  $('adminDashboard').classList.add('hidden');
+  $('adminLogin').classList.remove('hidden');
+}
+
+$('loginForm').addEventListener('submit', e => {
   e.preventDefault();
   const btn = $('loginForm').querySelector('button');
+  const pin = $('adminPin').value;
+  if (!pin || btn.disabled) return;
   btn.disabled = true;
-  adminPin = $('adminPin').value;
-  try {
-    await loadQueues();
-    try { sessionStorage.setItem(PIN_KEY, adminPin); } catch (err) {}
-    $('holidayFrom').min = today();
-    $('adminLogin').classList.add('hidden');
-    $('adminDashboard').classList.remove('hidden');
-    notify('Berhasil masuk dashboard.');
-  } catch (err) {
-    adminPin = '';
-    notify(err.message);
-  } finally {
-    btn.disabled = false;
-  }
+  adminPin = pin;
+  showDashboardLoading();
+  loadQueues()
+    .then(() => {
+      try { sessionStorage.setItem(PIN_KEY, pin); } catch (err) {}
+      $('holidayFrom').min = today();
+      notify('Berhasil masuk dashboard.');
+    })
+    .catch(err => {
+      backToLogin();
+      $('adminPin').value = '';
+      notify(err.message);
+    })
+    .finally(() => { btn.disabled = false; });
 });
 $('logoutBtn').onclick = logout;
 $('refreshBtn').onclick = () => loadQueues().then(() => notify('Data diperbarui.')).catch(handleError);
 $('filterDate').onchange = () => { searchQuery = ''; $('queueSearch').value = ''; loadQueues().catch(handleError); };
 
 /* ---------- Admin: daftar antrian ---------- */
-async function loadQueues() {
-  const data = await api({ action: 'list', pin: adminPin, date: $('filterDate').value });
+const CACHE_KEY = 'antrianKiemasCache';
+function applyQueueData(data) {
   queueItems = (data.items || []).map(i => ({ ...i, number: noOf(i.number) }));
   adminQuota = data.quota || 0;
   if (document.activeElement !== $('quotaInput')) $('quotaInput').value = adminQuota;
   renderStats();
   renderGrid();
   renderHolidayUI();
+}
+async function loadQueues() {
+  const date = $('filterDate').value;
+  const data = await api({ action: 'list', pin: adminPin, date });
+  // Abaikan balasan lama bila tanggal sudah diganti selama menunggu.
+  if (date !== $('filterDate').value) return;
+  applyQueueData(data);
+  // Simpan salinan sementara (hanya selama tab terbuka) agar dashboard langsung terisi saat dibuka ulang.
+  try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ date, data })); } catch (e) {}
+}
+// Tampilkan data terakhir dari salinan sementara sambil menunggu data terbaru. true bila ada.
+function showCachedQueues() {
+  try {
+    const c = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
+    if (c && c.date === $('filterDate').value && c.data) { applyQueueData(c.data); return true; }
+  } catch (e) {}
+  return false;
 }
 
 let adminQuota = 0;
@@ -993,18 +1027,15 @@ loadHolidays();
 
   // Langsung tampilkan dashboard tanpa menunggu server, supaya tidak berkedip
   adminPin = pin;
-  $('adminLogin').classList.add('hidden');
-  $('adminDashboard').classList.remove('hidden');
+  showDashboardLoading();
 
   try {
     await loadQueues();
     $('holidayFrom').min = today();
   } catch (err) {
     // Gagal: kembali ke layar login
-    adminPin = '';
-    $('adminDashboard').classList.add('hidden');
-    $('adminLogin').classList.remove('hidden');
-    if (err.message === 'PIN admin salah.') { try { sessionStorage.removeItem(PIN_KEY); } catch (e) {} }
+    backToLogin();
+    if (err.message === 'PIN admin salah.') { try { sessionStorage.removeItem(PIN_KEY); sessionStorage.removeItem(CACHE_KEY); } catch (e) {} }
     else notify(err.message);
   }
 })();
