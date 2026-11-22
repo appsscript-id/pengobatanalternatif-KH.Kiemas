@@ -463,16 +463,40 @@ $('filterDate').onchange = () => { searchQuery = ''; $('queueSearch').value = ''
 async function loadQueues() {
   const data = await api({ action: 'list', pin: adminPin, date: $('filterDate').value });
   queueItems = (data.items || []).map(i => ({ ...i, number: noOf(i.number) }));
-  const active = queueItems.filter(i => i.status !== 'Batal');
-  $('statTotal').textContent = queueItems.length;
-  $('statPending').textContent = active.filter(i => !i.cardTaken).length;
-  $('statTaken').textContent = active.filter(i => i.cardTaken).length;
-  $('statCancelled').textContent = queueItems.length - active.length;
-  const q = data.quota || 0;
-  $('queueCount').textContent = queueItems.length + ' pasien terdaftar · ' + (data.summary.cardTaken || 0) + ' kartu sudah diambil' + (q ? ' · kuota ' + active.length + '/' + q : '');
-  if (document.activeElement !== $('quotaInput')) $('quotaInput').value = q;
+  adminQuota = data.quota || 0;
+  if (document.activeElement !== $('quotaInput')) $('quotaInput').value = adminQuota;
+  renderStats();
   renderGrid();
   renderHolidayUI();
+}
+
+let adminQuota = 0;
+function renderStats() {
+  const active = queueItems.filter(i => i.status !== 'Batal');
+  const taken = active.filter(i => i.cardTaken).length;
+  $('statTotal').textContent = queueItems.length;
+  $('statPending').textContent = active.length - taken;
+  $('statTaken').textContent = taken;
+  $('statCancelled').textContent = queueItems.length - active.length;
+  $('queueCount').textContent = queueItems.length + ' pasien terdaftar · ' + queueItems.filter(i => i.cardTaken).length + ' kartu sudah diambil' + (adminQuota ? ' · kuota ' + active.length + '/' + adminQuota : '');
+}
+
+/* Tandai kartu secara optimistis: tampilan langsung berubah, server menyusul di latar belakang.
+   Bila server gagal, tampilan dikembalikan seperti semula. */
+function setCardOptimistic(item, taken) {
+  const prev = { cardTaken: item.cardTaken, cardAt: item.cardAt };
+  item.cardTaken = taken;
+  item.cardAt = taken ? new Date().toISOString() : '';
+  renderStats();
+  renderGrid();
+  notify(taken ? 'Kartu ' + item.number + ' ditandai sudah diambil.' : 'Tanda kartu ' + item.number + ' dibatalkan.');
+  return api({ action: 'card', value: taken ? '1' : '0', pin: adminPin, id: item.id }).catch(err => {
+    item.cardTaken = prev.cardTaken;
+    item.cardAt = prev.cardAt;
+    renderStats();
+    renderGrid();
+    handleError(err);
+  });
 }
 
 let searchQuery = '';
@@ -549,6 +573,7 @@ $('queueGrid').addEventListener('click', async e => {
   if (!item) return;
   const action = b.dataset.action;
   if (action === 'edit') { openModal(item); return; }
+  if (action === 'card' || action === 'uncard') { setCardOptimistic(item, action === 'card'); return; }
   if (action === 'delete' && !(await askConfirm('Hapus antrian ' + item.number + ' atas nama ' + item.name + '?', 'Ya, hapus', 'Hapus antrian'))) return;
   const request = action === 'card' ? { action: 'card', value: '1' }
     : action === 'uncard' ? { action: 'card', value: '0' }
@@ -583,17 +608,8 @@ $('queueSearch').addEventListener('keydown', async e => {
   if (list.length !== 1) { notify(list.length ? 'Ada lebih dari satu hasil. Ketik nomor lengkap.' : 'Nomor tidak ditemukan.'); return; }
   const item = list[0];
   if (item.cardTaken) { notify('Kartu ' + item.number + ' sudah ditandai diambil.'); return; }
-  busy = true;
-  try {
-    await api({ action: 'card', value: '1', pin: adminPin, id: item.id });
-    searchQuery = ''; $('queueSearch').value = '';
-    await loadQueues();
-    notify('Kartu ' + item.number + ' ditandai sudah diambil.');
-  } catch (err) {
-    handleError(err);
-  } finally {
-    busy = false;
-  }
+  searchQuery = ''; $('queueSearch').value = '';
+  setCardOptimistic(item, true);
 });
 
 /* ---------- Admin: cetak daftar harian & kartu antrian ---------- */
